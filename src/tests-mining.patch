@@ -1,0 +1,27 @@
+diff --git a/Makefile b/Makefile
+index 928942721..150a9134e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -96,7 +96,8 @@ release: cmake-release
+ 
+ release-test:
+ 	mkdir -p $(builddir)/release
+-	cd $(builddir)/release && cmake -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=release $(topdir) && $(MAKE) && $(MAKE) test
++	#cd $(builddir)/release && cmake -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=release $(topdir) && $(MAKE) && $(MAKE) test
++	cd $(builddir)/release && cmake -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=release $(topdir) && $(MAKE) && ctest -V -R functional_tests_rpc # Temporary
+ 
+ release-all:
+ 	mkdir -p $(builddir)/release
+diff --git a/tests/functional_tests/CMakeLists.txt b/tests/functional_tests/CMakeLists.txt
+index 462fd4b77..8dc15d397 100644
+--- a/tests/functional_tests/CMakeLists.txt
++++ b/tests/functional_tests/CMakeLists.txt
+@@ -68,7 +68,7 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE} "-c" "import requests; print('OK')"
+ if (REQUESTS_OUTPUT STREQUAL "OK")
+   add_test(
+     NAME    functional_tests_rpc
+-    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/functional_tests_rpc.py" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" all)
++    COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/functional_tests_rpc.py" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" mining)
+ else()
+   message(WARNING "functional_tests_rpc skipped, needs the 'requests' python module")
+   set(CTEST_CUSTOM_TESTS_IGNORE ${CTEST_CUSTOM_TESTS_IGNORE} functional_tests_rpc)

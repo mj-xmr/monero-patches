@@ -1,0 +1,44 @@
+diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
+index 6a6ed05e9..f447d7389 100644
+--- a/external/CMakeLists.txt
++++ b/external/CMakeLists.txt
+@@ -84,4 +84,4 @@ add_subdirectory(db_drivers)
+ add_subdirectory(easylogging++)
+ add_subdirectory(qrcodegen)
+ add_subdirectory(randomx EXCLUDE_FROM_ALL)
+-add_subdirectory(equix EXCLUDE_FROM_ALL)
++#add_subdirectory(equix EXCLUDE_FROM_ALL)
+diff --git a/src/crypto/c_threads.h b/src/crypto/c_threads.h
+index a62dd815c..42de07155 100644
+--- a/src/crypto/c_threads.h
++++ b/src/crypto/c_threads.h
+@@ -30,6 +30,7 @@
+ #pragma once
+ 
+ #ifdef _WIN32
++#define _WIN32_WINNT _WIN32_WINNT_WIN7 // Needed for i686-MinGW to find symbols from kernel32
+ #include <windows.h>
+ #include <synchapi.h>
+ #define CTHR_MUTEX_TYPE	HANDLE
+diff --git a/src/cryptonote_basic/cryptonote_boost_serialization.h b/src/cryptonote_basic/cryptonote_boost_serialization.h
+index e19ee5da4..155af7a1b 100644
+--- a/src/cryptonote_basic/cryptonote_boost_serialization.h
++++ b/src/cryptonote_basic/cryptonote_boost_serialization.h
+@@ -337,7 +337,7 @@ namespace boost
+     if (x.rangeSigs.empty())
+     {
+       a & x.bulletproofs;
+-      if (ver >= 2)
++      if (ver >= 2u)
+         a & x.bulletproofs_plus;
+     }
+     a & x.MGs;
+@@ -367,7 +367,7 @@ namespace boost
+     if (x.p.rangeSigs.empty())
+     {
+       a & x.p.bulletproofs;
+-      if (ver >= 2)
++      if (ver >= 2u)
+         a & x.p.bulletproofs_plus;
+     }
+     a & x.p.MGs;

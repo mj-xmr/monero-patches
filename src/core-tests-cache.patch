@@ -1,0 +1,28 @@
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index aa6afbfbc..6800f4a1c 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -128,6 +128,12 @@ jobs:
+         path: ~/.ccache
+         key: test-ubuntu-ccache-${{ github.sha }}
+         restore-keys: test-ubuntu-ccache-
++    - name: test_cache generated files
++      uses: actions/cache@v2
++      with:
++        path: build/test_cache
++        key: test-ubuntu-generated-${{ github.sha }}
++        restore-keys: test-ubuntu-generated-
+     - name: remove bundled boost
+       run: sudo rm -rf /usr/local/share/boost
+     - name: set apt conf
+@@ -149,8 +155,9 @@ jobs:
+         DIR_BUILD="build/ci/release"
+         DIR_SRC="`pwd`"
+         mkdir -p "${DIR_BUILD}" && cd "${DIR_BUILD}"
+-        cmake -S "${DIR_SRC}" -D ARCH="default" -D BUILD_SHARED_LIBS=ON -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=release && make -j3 && make test
++        cmake -S "${DIR_SRC}" -D ARCH="default" -D BUILD_SHARED_LIBS=ON -D BUILD_TESTS=ON -D TESTS_REUSE_CACHE=ON -D CMAKE_BUILD_TYPE=release && make -j3 && make test
+ 
+ # ARCH="default" (not "native") ensures, that a different execution host can execute binaries compiled elsewhere.
+ # BUILD_SHARED_LIBS=ON speeds up the linkage part a bit, reduces size, and is the only place where the dynamic linkage is tested.
++# You may temporarily set TESTS_REUSE_CACHE=ON to speed up multiple runs of tests.
+ 
