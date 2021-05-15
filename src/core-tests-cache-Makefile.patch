@@ -13,6 +13,19 @@ index e858b3aaf..39b027f6f 100644
  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
    set(DEFAULT_BUILD_DEBUG_UTILITIES ON)
  else()
+diff --git a/Makefile b/Makefile
+index 928942721..1491fc164 100644
+--- a/Makefile
++++ b/Makefile
+@@ -100,7 +100,7 @@ release-test:
+ 
+ release-all:
+ 	mkdir -p $(builddir)/release
+-	cd $(builddir)/release && cmake -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=release $(topdir) && $(MAKE)
++	cd $(builddir)/release && cmake -D BUILD_TESTS=ON -D CMAKE_BUILD_TYPE=release -DBoost_INCLUDE_DIR="/home/enjo/devel/lib/tree/include" -DARCH="default" -DBUILD_TESTS=ON -DTESTS_REUSE_CACHE=ON -DBUILD_DEBUG_UTILITIES=ON -DUSE_DEVICE_TREZOR=ON -DUSE_DEVICE_TREZOR_LIBUSB=ON -DBUILD_GUI_DEPS=OFF -DUSE_READLINE=ON -DBUILD_SHARED_LIBS=ON $(topdir) && $(MAKE)
+ 
+ release-static:
+ 	mkdir -p $(builddir)/release
 diff --git a/tests/core_tests/CMakeLists.txt b/tests/core_tests/CMakeLists.txt
 index 7455639ca..69db9869c 100644
 --- a/tests/core_tests/CMakeLists.txt
