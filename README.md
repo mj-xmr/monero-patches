@@ -1,12 +1,12 @@
 # monero-patches
 Patches that are not meant to be integrated or are not yet integrated. They can still serve as useful ad-hoc solutions.
 Please be aware of the following points:
-- they are not yet fully approved by the Monero Maintainers and must not enter the Monero's master branch. For this reason, before opening a PR, please unpatch your branch (read below how to do it)
-- some of them may be unmaintained
+- they are not yet fully approved by the Monero Maintainers and *must not enter* the Monero's master branch. For this reason, before opening a PR, please unpatch your branch (read below how to do it)
+- some of them may be unmaintained at a given point of time in the future
 
 # Usage
 
-Assuming that your monero fork is cloned into a directory below the current one, clone this project to a sibling directory. Next enter your fork's directory. From within, whether or after you perform your own changes in your branch, apply a given patch via:
+Assuming that your monero fork is cloned into a directory below the current one, clone this project to a sibling directory. Next enter your fork's directory. From within, whether before or after you perform your own changes in your branch, apply a given patch via:
 
 ```bash
 git apply ../monero-patches/src/[SOME_PATCH]
