@@ -2,7 +2,7 @@
 Patches that are not meant to be integrated or are not yet integrated. They can still serve as useful ad-hoc solutions.
 Please be aware of the following points:
 - they are not yet fully approved by the Monero Maintainers and **must not enter** the Monero's master branch. For this reason, before opening a PR, please unpatch your branch (read below how to do it)
-- some of them may be unmaintained at a given point of time in the future
+- some of them may be unmaintained at a given point of time in the future, as there's no CI
 
 # Usage
 
