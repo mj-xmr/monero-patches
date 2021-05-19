@@ -1,3 +1,11 @@
+- [monero-patches](#monero-patches)
+- [Usage](#usage)
+- [Description of the patches](#description-of-the-patches)
+  * [Common Developers' use cases](#common-developers--use-cases)
+    + [Testing](#testing)
+    + [Compilation](#compilation)
+  * [CI Maintainers' use cases](#ci-maintainers--use-cases)
+  
 # monero-patches
 Patches that are not meant to be integrated or are not yet integrated. They can still serve as useful ad-hoc solutions.
 Please be aware of the following points:
