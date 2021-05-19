@@ -1,0 +1,185 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index fecea318b..b91d1ae98 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -75,7 +75,23 @@ if (${CMAKE_VERSION} VERSION_GREATER "3.0.0" AND CMAKE_MAKE_PROGRAM MATCHES "nin
+     set(CMAKE_JOB_POOL_LINK link_job_pool)
+   endif ()
+ endif ()
+-  
++
++option (USE_UNITY "Use unity builds" ON) # TODO: switch to OFF before review
++if (USE_UNITY)
++	set(UNITY_MIN_CMAKE_VERSION "3.16.6")
++	if(${CMAKE_VERSION} VERSION_LESS ${UNITY_MIN_CMAKE_VERSION})
++		message(WARNING "Unity builds cannot be used with CMake prior to ${UNITY_MIN_CMAKE_VERSION}")
++		set(USE_UNITY OFF)
++	else()
++		message(STATUS "Using unity builds")
++	endif()
++endif()
++macro (monero_target_unity target)
++	if (USE_UNITY)
++		set_target_properties(${target} PROPERTIES UNITY_BUILD "TRUE")
++	endif()
++endmacro()
++
+ option (USE_CLANG_TIDY_C   "Lint the code with clang-tidy - variant C"   OFF)
+ option (USE_CLANG_TIDY_CXX "Lint the code with clang-tidy - variant C++" OFF)
+ if (USE_CLANG_TIDY_C AND USE_CLANG_TIDY_CXX)
+diff --git a/src/common/expect.h b/src/common/expect.h
+index 72e4060a7..69fad19a6 100644
+--- a/src/common/expect.h
++++ b/src/common/expect.h
+@@ -201,7 +201,7 @@ public:
+     }
+ 
+     //! Copy conversion from `U` to `T`.
+-    template<typename U, typename = detail::enable_if<is_convertible<U const&>()>>
++    template<typename U, typename = ::detail::enable_if<is_convertible<U const&>()>>
+     expect(expect<U> const& src) noexcept(std::is_nothrow_constructible<T, U const&>())
+       : code_(src.error()), storage_()
+     {
+@@ -217,7 +217,7 @@ public:
+     }
+ 
+     //! Move conversion from `U` to `T`.
+-    template<typename U, typename = detail::enable_if<is_convertible<U>()>>
++    template<typename U, typename = ::detail::enable_if<is_convertible<U>()>>
+     expect(expect<U>&& src) noexcept(std::is_nothrow_constructible<T, U>())
+       : code_(src.error()), storage_()
+     {
+@@ -327,7 +327,7 @@ public:
+         \note This function is `noexcept` when `U == T` is `noexcept`.
+         \return False if `has_error()`, otherwise `value() == rhs`.
+     */
+-    template<typename U, typename = detail::enable_if<!std::is_constructible<std::error_code, U>::value>>
++    template<typename U, typename = ::detail::enable_if<!std::is_constructible<std::error_code, U>::value>>
+     bool equal(U const& rhs) const noexcept(noexcept(*std::declval<expect<T>>() == rhs))
+     {
+         return has_value() && get() == rhs;
+diff --git a/tests/core_tests/CMakeLists.txt b/tests/core_tests/CMakeLists.txt
+index 7455639ca..77393954b 100644
+--- a/tests/core_tests/CMakeLists.txt
++++ b/tests/core_tests/CMakeLists.txt
+@@ -87,6 +87,8 @@ set_property(TARGET core_tests
+   PROPERTY
+     FOLDER "tests")
+ 
++monero_target_unity(core_tests)
++
+ add_test(
+   NAME    core_tests
+   COMMAND core_tests --generate_and_play_test_data)
+diff --git a/tests/unit_tests/CMakeLists.txt b/tests/unit_tests/CMakeLists.txt
+index 556e0ec40..a15fdbcc1 100644
+--- a/tests/unit_tests/CMakeLists.txt
++++ b/tests/unit_tests/CMakeLists.txt
+@@ -137,10 +137,23 @@ if (NOT MSVC)
+       COMPILE_FLAGS " -Wno-undef -Wno-sign-compare")
+ endif ()
+ 
++monero_target_unity(unit_tests)
++
+ SET_PROPERTY(SOURCE main.cpp PROPERTY COMPILE_FLAGS -DDEFAULT_DATA_DIR="\\"${CMAKE_SOURCE_DIR}/tests/data\\"")
+ 
+ SET_PROPERTY(SOURCE memwipe.cpp PROPERTY COMPILE_FLAGS -Ofast)
+ 
++if (USE_UNITY)
++	# Definition required to acces private members in Unity Build for files:
++	# - long_term_block_weight.cpp
++	# - block_weight.cpp
++	# and perhaps other in the future
++	target_compile_definitions(unit_tests PRIVATE -DIN_UNIT_TESTS)
++	# Exclude logging from Unity build, since it's dependent on source file's name.
++	# This is achieved through setting an arbitrary compilation flag for the file. -O0 won't hurt.
++	SET_PROPERTY(SOURCE logging.cpp PROPERTY COMPILE_FLAGS -O0)
++endif()
++
+ add_test(
+   NAME    unit_tests
+   COMMAND unit_tests --data-dir "${TEST_DATA_DIR}")
+diff --git a/tests/unit_tests/crypto_operators.h b/tests/unit_tests/crypto_operators.h
+new file mode 100644
+index 000000000..e1d7cd926
+--- /dev/null
++++ b/tests/unit_tests/crypto_operators.h
+@@ -0,0 +1,39 @@
++// Copyright (c) 2018-2021, The Monero Project
++// 
++// All rights reserved.
++// 
++// Redistribution and use in source and binary forms, with or without modification, are
++// permitted provided that the following conditions are met:
++// 
++// 1. Redistributions of source code must retain the above copyright notice, this list of
++//    conditions and the following disclaimer.
++// 
++// 2. Redistributions in binary form must reproduce the above copyright notice, this list
++//    of conditions and the following disclaimer in the documentation and/or other
++//    materials provided with the distribution.
++// 
++// 3. Neither the name of the copyright holder nor the names of its contributors may be
++//    used to endorse or promote products derived from this software without specific
++//    prior written permission.
++// 
++// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++// THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
++// THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++#pragma once
++
++#include "crypto/crypto.h"
++
++inline unsigned char *operator &(crypto::ec_point &point) {
++    return &reinterpret_cast<unsigned char &>(point);
++  }
++
++inline unsigned char *operator &(crypto::ec_scalar &scalar) {
++    return &reinterpret_cast<unsigned char &>(scalar);
++  }
++
+diff --git a/tests/unit_tests/subaddress.cpp b/tests/unit_tests/subaddress.cpp
+index bf24022e8..4cd0234ac 100644
+--- a/tests/unit_tests/subaddress.cpp
++++ b/tests/unit_tests/subaddress.cpp
+@@ -30,6 +30,7 @@
+ #include <boost/filesystem.hpp>
+ #include "gtest/gtest.h"
+ 
++#include "crypto_operators.h"
+ #include "include_base_utils.h"
+ #include "wallet/wallet2.h"
+ #include "crypto/crypto.h"
+diff --git a/tests/unit_tests/tx_proof.cpp b/tests/unit_tests/tx_proof.cpp
+index c5d06bc68..7899e0cfa 100644
+--- a/tests/unit_tests/tx_proof.cpp
++++ b/tests/unit_tests/tx_proof.cpp
+@@ -26,6 +26,7 @@
+ // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+ // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
++#include "crypto_operators.h"
+ #include "gtest/gtest.h"
+ 
+ #include "crypto/crypto.h"
+@@ -35,14 +36,6 @@ extern "C" {
+ #include "crypto/hash.h"
+ #include <boost/algorithm/string.hpp>
+ 
+-static inline unsigned char *operator &(crypto::ec_point &point) {
+-    return &reinterpret_cast<unsigned char &>(point);
+-  }
+-
+-static inline unsigned char *operator &(crypto::ec_scalar &scalar) {
+-    return &reinterpret_cast<unsigned char &>(scalar);
+-  }
+-
+ TEST(tx_proof, prove_verify_v2)
+ {
+     crypto::secret_key r;

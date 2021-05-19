@@ -1,0 +1,176 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index fecea318b..bc8b7cb0b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -62,6 +62,28 @@ if (USE_COMPILATION_TIME_PROFILER)
+ 	add_compile_options("-ftime-trace")
+ endif()
+ 
++option(USE_PCH "Use precompiled headers" OFF)
++if (USE_PCH)
++	set(PCH_MIN_CMAKE_VERSION "3.16.6")
++	if(${CMAKE_VERSION} VERSION_LESS ${PCH_MIN_CMAKE_VERSION})
++		message(WARNING "Precompiled headers cannot be used with CMake prior to ${PCH_MIN_CMAKE_VERSION}")
++		set(USE_PCH OFF)
++	else()
++		message(STATUS "Using precompiled headers")
++	endif()
++endif()
++macro (monero_use_pch_private target header)
++  if (USE_PCH)
++    if (NOT MSVC)
++      # Play nicely with ccache:
++      # https://stackoverflow.com/questions/2530864/gcc-precompiled-headers-weird-behaviour-with-c-option
++      # https://ccache.dev/manual/latest.html#_precompiled_headers
++      target_compile_options(${target} PRIVATE "-fpch-preprocess")
++    endif()
++    target_precompile_headers(${target} PRIVATE ${header})
++  endif()
++endmacro()
++
+ if (${CMAKE_VERSION} VERSION_GREATER "3.0.0" AND CMAKE_MAKE_PROGRAM MATCHES "ninja")
+   set(MONERO_PARALLEL_COMPILE_JOBS "" CACHE STRING "The maximum number of concurrent compilation jobs.")
+   if (MONERO_PARALLEL_COMPILE_JOBS)
+diff --git a/tests/core_tests/CMakeLists.txt b/tests/core_tests/CMakeLists.txt
+index 7455639ca..b58389295 100644
+--- a/tests/core_tests/CMakeLists.txt
++++ b/tests/core_tests/CMakeLists.txt
+@@ -87,6 +87,8 @@ set_property(TARGET core_tests
+   PROPERTY
+     FOLDER "tests")
+ 
++monero_use_pch_private(core_tests pch_core_tests.h)
++
+ add_test(
+   NAME    core_tests
+   COMMAND core_tests --generate_and_play_test_data)
+diff --git a/tests/core_tests/pch_core_tests.h b/tests/core_tests/pch_core_tests.h
+new file mode 100644
+index 000000000..df376b6fa
+--- /dev/null
++++ b/tests/core_tests/pch_core_tests.h
+@@ -0,0 +1,34 @@
++// Copyright (c) 2014-2020, The Monero Project
++// 
++// All rights reserved.
++// 
++// Redistribution and use in source and binary forms, with or without modification, are
++// permitted provided that the following conditions are met:
++// 
++// 1. Redistributions of source code must retain the above copyright notice, this list of
++//    conditions and the following disclaimer.
++// 
++// 2. Redistributions in binary form must reproduce the above copyright notice, this list
++//    of conditions and the following disclaimer in the documentation and/or other
++//    materials provided with the distribution.
++// 
++// 3. Neither the name of the copyright holder nor the names of its contributors may be
++//    used to endorse or promote products derived from this software without specific
++//    prior written permission.
++// 
++// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++// THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
++// THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++// 
++#pragma once
++
++#include "chaingen.h"
++#include "misc_log_ex.h"
++#include <boost/multiprecision/cpp_int.hpp>
++
+diff --git a/tests/unit_tests/CMakeLists.txt b/tests/unit_tests/CMakeLists.txt
+index 556e0ec40..884fd1cf6 100644
+--- a/tests/unit_tests/CMakeLists.txt
++++ b/tests/unit_tests/CMakeLists.txt
+@@ -130,6 +130,8 @@ set_property(TARGET unit_tests
+   PROPERTY
+     FOLDER "tests")
+ 
++monero_use_pch_private(unit_tests pch_unit_tests.h)
++
+ if (NOT MSVC)
+   set_property(TARGET unit_tests
+     APPEND_STRING
+diff --git a/tests/unit_tests/pch_unit_tests.h b/tests/unit_tests/pch_unit_tests.h
+new file mode 100644
+index 000000000..a61aad64f
+--- /dev/null
++++ b/tests/unit_tests/pch_unit_tests.h
+@@ -0,0 +1,71 @@
++// Copyright (c) 2014-2020, The Monero Project
++// 
++// All rights reserved.
++// 
++// Redistribution and use in source and binary forms, with or without modification, are
++// permitted provided that the following conditions are met:
++// 
++// 1. Redistributions of source code must retain the above copyright notice, this list of
++//    conditions and the following disclaimer.
++// 
++// 2. Redistributions in binary form must reproduce the above copyright notice, this list
++//    of conditions and the following disclaimer in the documentation and/or other
++//    materials provided with the distribution.
++// 
++// 3. Neither the name of the copyright holder nor the names of its contributors may be
++//    used to endorse or promote products derived from this software without specific
++//    prior written permission.
++// 
++// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
++// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
++// THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
++// THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++// 
++#pragma once
++
++#include "misc_log_ex.h"
++
++#include <boost/multiprecision/cpp_int.hpp>
++
++#include <boost/program_options/options_description.hpp>
++#include <boost/program_options/variables_map.hpp>
++
++#if BOOST_VERSION >= 107400
++#include <boost/serialization/library_version_type.hpp>
++#endif
++#include <boost/serialization/list.hpp>
++#include <boost/serialization/vector.hpp>
++#include <boost/serialization/deque.hpp>
++
++#include <boost/archive/portable_binary_oarchive.hpp>
++#include <boost/archive/portable_binary_iarchive.hpp>
++
++#include <boost/filesystem.hpp>
++#include <boost/filesystem/path.hpp>
++#include <boost/filesystem/operations.hpp>
++
++#include <boost/optional/optional.hpp>
++
++#include <boost/thread/thread.hpp>
++#include <boost/thread/mutex.hpp>
++#include <boost/thread/lock_guard.hpp>
++#include <boost/thread/scoped_thread.hpp>
++#include <boost/thread/condition_variable.hpp>
++
++#include <boost/algorithm/string/predicate.hpp>
++#include <boost/algorithm/string.hpp>
++
++#include <boost/foreach.hpp>
++
++#include <boost/system/error_code.hpp>
++
++#include <memory>
++#include <atomic>
++#include <random>
++
++
