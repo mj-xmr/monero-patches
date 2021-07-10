@@ -1,0 +1,45 @@
+diff --git a/contrib/epee/src/CMakeLists.txt b/contrib/epee/src/CMakeLists.txt
+index 3c5eb49e9..f6cd7b44f 100644
+--- a/contrib/epee/src/CMakeLists.txt
++++ b/contrib/epee/src/CMakeLists.txt
+@@ -47,6 +47,17 @@ if (USE_READLINE AND (GNU_READLINE_FOUND OR (DEPENDS AND NOT MINGW)))
+   monero_add_library(epee_readline readline_buffer.cpp)
+ endif()
+ 
++add_executable(epx main.cpp)
++target_link_libraries(epx epee ${Boost_REGEX_LIBRARY}
++    easylogging
++    ${Boost_CHRONO_LIBRARY}
++    ${Boost_SYSTEM_LIBRARY}
++    ${Boost_FILESYSTEM_LIBRARY}
++    ${Boost_THREAD_LIBRARY}
++    ${Boost_REGEX_LIBRARY}
++    ${OPENSSL_LIBRARIES}
++)
++
+ if(HAVE_C11)
+ SET_PROPERTY(SOURCE memwipe.c PROPERTY COMPILE_FLAGS -std=c11)
+ endif()
+diff --git a/contrib/epee/src/main.cpp b/contrib/epee/src/main.cpp
+new file mode 100644
+index 000000000..87e02d230
+--- /dev/null
++++ b/contrib/epee/src/main.cpp
+@@ -0,0 +1,17 @@
++//#include "misc_log_ex_min.h"
++#include "misc_log_ex_max.h"
++//#include "misc_log_ex_min.h"
++//#include "misc_log_ex_max.h"
++//#include "misc_log_ex_min.h"
++#include "misc_log_ex_min.h"
++//#include "easylogging++_base.h"
++#include "net/net_parse_helpers.h"
++
++int main()
++{
++	MINFO("Epx log Test"); // Example usage of minimal logging
++    epee::net_utils::http::url_content a;
++    epee::net_utils::parse_url("das", a); // max logging hidden here
++
++	return 0;
++}
