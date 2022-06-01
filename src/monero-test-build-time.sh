@@ -32,7 +32,7 @@ else
 	RD=ramdisk
 	DIR_SRC="/Volumes/$RD"
 	if [ ! -e "$DIR_SRC" ];  then
-	    diskutil erasevolume HFS+ "$RD" `hdiutil attach -nomount`
+	    diskutil erasevolume HFS+ "$DIR_SRC" `hdiutil attach -nomount`
 	fi
 
 	PROC=$(sysctl -n hw.ncpu)
