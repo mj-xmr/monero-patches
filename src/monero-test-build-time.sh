@@ -2,7 +2,6 @@
 
 #DIR_SRC=../..
 REPO_URL="https://github.com/mj-xmr/monero-mj.git"
-BOOST_DIR="$HOME/devel/lib/boost/latest"
 LOCAL_COPY_NAME="monero-build-time-test"
 
 # Script arguments:
@@ -35,7 +34,7 @@ else
 	if [ ! -e "$DIR_SRC" ];  then
 	    diskutil erasevolume HFS+ "$RD" `hdiutil attach -nomount`
 	fi
-	
+
 	PROC=$(sysctl -n hw.ncpu)
 	#PROC=1
 fi
@@ -43,8 +42,7 @@ fi
 do_cmake() {
 	git submodule update --init --force
 	git submodule update --remote; git submodule sync && git submodule update
-	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=OFF -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DUSE_UNITY=ON -DBoost_INCLUDE_DIR="$BOOST_DIR/include" -DBoost_LIB_DIR="$BOOST_DIR/lib"
-	#CC="/usr/lib/icecc/bin/cc" CXX="/usr/lib/icecc/bin/c++" cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DUSE_UNITY=ON -DBoost_INCLUDE_DIR="$BOOST_DIR/include" -DBoost_LIB_DIR="$BOOST_DIR/lib" -DARCH="default"
+	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DUSE_UNITY=ON 
 }
 
 line() {
