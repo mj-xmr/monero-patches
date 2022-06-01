@@ -35,7 +35,7 @@ else
 	#    diskutil erasevolume HFS+ "$RD" `hdiutil attach -nomount`
 	#fi
 	# TODO: Disabled Mac RAM disk for now
-	DIR_SRC="."
+	DIR_SRC=$(pwd)
 	PROC=$(sysctl -n hw.ncpu)
 	#PROC=1
 fi
