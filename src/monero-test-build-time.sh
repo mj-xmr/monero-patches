@@ -1,12 +1,26 @@
 #!/bin/bash -e
 
+# Monero build time tester
+# Author: mj-xmr
+
+# This script tests build time and addresses the following problems:
+# - Eliminates I/O interference, as the build and source directories reside on RAMDisk
+# - Reduces linking time, since dynamic linkage is used
+# - Uses just 1 thread for timed builds, solving thread starvation problem, as well as RAM depletion during compilation of large files
+# - Repeats the whole comparative experiment in a reverse order, to estimate if the RAM caches influence the result depending on the order in which it's being built.
+
+# Works under Linux and Mac OSX
+
+# Script's arguments:
+BRANCH_NAME=$1
+TARGET=$2 # Target to be built. Can be set to "all"
+# REPO_URL=$3 # Optional: URL to the Monero fork to be tested.
+
+
 #DIR_SRC=../..
 REPO_URL="https://github.com/mj-xmr/monero-mj.git"
 LOCAL_COPY_NAME="monero-build-time-test"
 
-# Script arguments:
-BRANCH_NAME=$1
-TARGET=$2 # can be set to "all"
 
 if [ -z $1 ]; then
 	echo "Please provide branch name"
@@ -43,7 +57,7 @@ fi
 do_cmake() {
 	git submodule update --init --force
 	git submodule update --remote; git submodule sync && git submodule update
-	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DUSE_UNITY=ON 
+	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=OFF -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DUSE_UNITY=ON 
 }
 
 
@@ -134,4 +148,32 @@ do_master $TARGET
 checkout_branch $BRANCH_NAME
 do_branch_silent $BRANCH_NAME $TARGET
 do_branch_silent $BRANCH_NAME
+
+# Copyright (c) 2022-2023, mj-xmr
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, are
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of
+#    conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list
+#    of conditions and the following disclaimer in the documentation and/or other
+#    materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors may be
+#    used to endorse or promote products derived from this software without specific
+#    prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+# THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+# THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
