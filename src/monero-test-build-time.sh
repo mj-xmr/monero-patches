@@ -30,11 +30,12 @@ else
 	# https://gist.github.com/htr3n/344f06ba2bb20b1056d7d5570fe7f596
 	# https://eshop.macsales.com/blog/46348-how-to-create-and-use-a-ram-disk-with-your-mac-warnings-included/
 	RD=ramdisk
-	DIR_SRC="/Volumes/$RD"
-	if [ ! -e "$DIR_SRC" ];  then
-	    diskutil erasevolume HFS+ "$DIR_SRC" `hdiutil attach -nomount`
-	fi
-
+	#DIR_SRC="/Volumes/$RD"
+	#if [ ! -e "$DIR_SRC" ];  then
+	#    diskutil erasevolume HFS+ "$RD" `hdiutil attach -nomount`
+	#fi
+	# TODO: Disabled Mac RAM disk for now
+	DIR_SRC="."
 	PROC=$(sysctl -n hw.ncpu)
 	#PROC=1
 fi
