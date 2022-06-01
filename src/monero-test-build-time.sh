@@ -20,6 +20,7 @@ TARGET=$2 # Target to be built. Can be set to "all"
 #DIR_SRC=../..
 REPO_URL="https://github.com/mj-xmr/monero-mj.git"
 LOCAL_COPY_NAME="monero-build-time-test"
+DIR_BUILD="build/time"
 
 
 if [ -z $1 ]; then
@@ -85,6 +86,7 @@ msg() {
 }
 
 do_make() {
+	cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD"
 	if [ -z $2 ]; then
 		msg "Building ALL of $1"
 		make clean && time make > /dev/null 2>&1
@@ -131,7 +133,7 @@ else
 	cd "$DIR_SRC/$LOCAL_COPY_NAME"
 fi
 
-mkdir -p build/time && cd build/time
+mkdir -p "$DIR_BUILD" && cd "$DIR_BUILD"
 
 checkout_branch $BRANCH_NAME
 do_branch $BRANCH_NAME
