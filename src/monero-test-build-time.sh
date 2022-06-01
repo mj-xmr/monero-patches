@@ -45,6 +45,19 @@ do_cmake() {
 	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=ON -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DUSE_UNITY=ON 
 }
 
+
+date_utc() {
+	date -u
+}
+
+free_mem () {
+if [ "$(uname)" == "Linux" ]; then
+	free -g
+else
+	sysctl -n hw.memsize
+fi	
+}
+
 line() {
 	echo "+===============================================================+"
 }
@@ -61,13 +74,15 @@ do_make() {
 		msg "Building ALL of $1"
 		make clean && time make > /dev/null 2>&1
 		msg "Built ALL of $1 on:"
-		date
+		date_utc
+		free_mem
 		line
 	else 
 		msg "Building target: $2 of $1"
 		make -j${PROC} > /dev/null 2>&1 && cd "$2" && make clean && time make
 		msg "Built target $2 of $1 on:"
-		date
+		date_utc
+		free_mem
 		line
 	fi
 }
