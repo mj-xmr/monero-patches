@@ -101,7 +101,7 @@ do_make() {
 	if [ -z $2 ]; then
 		msg "Building ALL of $1"
 		cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD"
-		make clean && time $MAKE > /dev/null 2>&1
+		$MAKE clean && time $MAKE > /dev/null 2>&1
 		msg "Built ALL of $1 on:"
 		date_utc
 		free_mem
@@ -110,9 +110,9 @@ do_make() {
 		msg "Building target: $2 of $1"
 		cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD/$2"
 		# Build the deps first (silently) and then time only the target itself.
-		make -j${PROC} > /dev/null 2>&1 && $MAKE clean
+		$MAKE -j${PROC} > /dev/null 2>&1 && $MAKE clean
 		msg "Starting timing of target: $2 of $1"
-		time make
+		time $MAKE
 		msg "Built target $2 of $1 on:"
 		date_utc
 		free_mem
@@ -152,6 +152,8 @@ fi
 mkdir -p "$DIR_BUILD" && cd "$DIR_BUILD"
 
 checkout_branch $BRANCH_NAME
+do_branch_silent $BRANCH_NAME $TARGET
+return
 do_branch $BRANCH_NAME
 do_branch_silent $BRANCH_NAME $TARGET
 do_master $TARGET
