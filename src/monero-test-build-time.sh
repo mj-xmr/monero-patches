@@ -15,7 +15,8 @@
 # Script's arguments:
 BRANCH_NAME=$1
 TARGET=$2 # Target to be built. Can be set to "all"
-# REPO_URL=$3 # Optional: URL to the Monero fork to be tested.
+# MAKE_PROG=$3
+# REPO_URL=$4 # Optional: URL to the Monero fork to be tested.
 
 
 #DIR_SRC=../..
@@ -30,7 +31,11 @@ if [ -z $1 ]; then
 fi
 
 if [ ! -z $3 ]; then
-	REPO_URL=$3
+	MAKE_PROG="-DCMAKE_MAKE_PROGRAM=$3"
+fi
+
+if [ ! -z $4 ]; then
+	REPO_URL=$4
 fi
 
 # Use RAM disk to rule out I/O bottlenecks 
@@ -59,7 +64,7 @@ fi
 do_cmake() {
 	git submodule update --init --force
 	git submodule update --remote; git submodule sync && git submodule update
-	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=OFF -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DUSE_UNITY=ON 
+	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=OFF -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON "$MAKE_PROG" -DUSE_UNITY=ON
 }
 
 
@@ -141,6 +146,11 @@ fi
 mkdir -p "$DIR_BUILD" && cd "$DIR_BUILD"
 
 checkout_branch $BRANCH_NAME
+
+do_branch_silent $BRANCH_NAME $TARGET
+
+return 
+
 do_branch $BRANCH_NAME
 do_branch_silent $BRANCH_NAME $TARGET
 do_master $TARGET
