@@ -8,6 +8,7 @@
 # - Reduces linking time, since dynamic linkage is used
 # - Uses just 1 thread for timed builds, solving thread starvation problem, as well as RAM depletion during compilation of large files
 # - Repeats the whole comparative experiment in a reverse order, to estimate if the RAM caches influence the result depending on the order in which it's being built.
+# - TODO: uses ninja to further reduce cmake's I/O bottlenecks.
 
 # Works under Linux and Mac OSX
 
