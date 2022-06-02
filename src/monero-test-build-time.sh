@@ -152,11 +152,6 @@ fi
 mkdir -p "$DIR_BUILD" && cd "$DIR_BUILD"
 
 checkout_branch $BRANCH_NAME
-
-do_branch_silent $BRANCH_NAME $TARGET
-
-return 
-
 do_branch $BRANCH_NAME
 do_branch_silent $BRANCH_NAME $TARGET
 do_master $TARGET
