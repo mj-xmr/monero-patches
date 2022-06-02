@@ -34,6 +34,7 @@ fi
 if [ ! -z $3 ]; then
 	CMAKE_MAKE_PROG="-DCMAKE_MAKE_PROGRAM=$3"
 	MAKE=$3
+	echo "Altering the make program to: $MAKE and setting $CMAKE_MAKE_PROG to CMake."
 else
 	MAKE=make
 fi
