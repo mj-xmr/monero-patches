@@ -5,6 +5,7 @@
 
 # This script tests build time and addresses the following problems:
 # - Eliminates I/O interference, as the build and source directories reside on RAMDisk
+# - Strips symbols off the targets, in order to spare the space on RAMDisk, that would otherwise lead to memory fragmentation or worse: swapping
 # - Reduces linking time, since dynamic linkage is used
 # - Uses just 1 thread for timed builds, solving thread starvation problem, as well as RAM depletion during compilation of large files
 # - Repeats the whole comparative experiment in a reverse order, to estimate if the RAM caches influence the result depending on the order in which it's being built.
@@ -32,7 +33,7 @@ if [ -z $1 ]; then
 fi
 
 if [ ! -z $3 ]; then
-	CMAKE_MAKE_PROG="-DCMAKE_MAKE_PROGRAM=$3"
+	CMAKE_MAKE_PROG="-DCMAKE_GENERATOR:INTERNAL=Ninja" # TODO: parametrize nicer
 	MAKE=$3
 	echo "Altering the make program to: $MAKE and setting $CMAKE_MAKE_PROG to CMake."
 else
