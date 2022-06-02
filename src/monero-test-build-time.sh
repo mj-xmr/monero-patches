@@ -10,7 +10,7 @@
 # - Uses just 1 thread for timed builds, solving thread starvation problem, as well as RAM depletion during compilation of large files
 # - Repeats the whole comparative experiment in a reverse order, to estimate if the RAM caches influence the result depending on the order in which it's being built.
 # - decouples the timing of CMake from the timing of the compilation itself
-# - TODO: uses ninja to further reduce make's I/O bottlenecks.
+# - TODO (on Monero's end): uses ninja to further reduce make's I/O bottlenecks.
 
 # Works under Linux and Mac OSX
 
@@ -152,8 +152,6 @@ fi
 mkdir -p "$DIR_BUILD" && cd "$DIR_BUILD"
 
 checkout_branch $BRANCH_NAME
-do_branch_silent $BRANCH_NAME $TARGET
-return
 do_branch $BRANCH_NAME
 do_branch_silent $BRANCH_NAME $TARGET
 do_master $TARGET
