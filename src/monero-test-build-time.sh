@@ -8,6 +8,7 @@
 # - Reduces linking time, since dynamic linkage is used
 # - Uses just 1 thread for timed builds, solving thread starvation problem, as well as RAM depletion during compilation of large files
 # - Repeats the whole comparative experiment in a reverse order, to estimate if the RAM caches influence the result depending on the order in which it's being built.
+# - TODO: uses ninja to further reduce cmake's I/O bottlenecks.
 
 # Works under Linux and Mac OSX
 
@@ -75,7 +76,7 @@ fi
 }
 
 line() {
-	echo "+===============================================================+"
+	echo "+=============================================+"
 }
 
 msg() {
@@ -86,7 +87,6 @@ msg() {
 }
 
 do_make() {
-	
 	if [ -z $2 ]; then
 		msg "Building ALL of $1"
 		cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD"
@@ -97,9 +97,11 @@ do_make() {
 		line
 	else 
 		msg "Building target: $2 of $1"
-		cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD"
+		cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD/$2"
 		# Build the deps first (silently) and then time only the target itself.
-		make -j${PROC} > /dev/null 2>&1 && cd "$2" && make clean && time make
+		make -j${PROC} > /dev/null 2>&1 && make clean
+		msg "Starting timing of target: $2 of $1"
+		time make
 		msg "Built target $2 of $1 on:"
 		date_utc
 		free_mem
