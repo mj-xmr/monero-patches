@@ -98,7 +98,7 @@ do_make() {
 	else 
 		msg "Building target: $2 of $1"
 		cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD"
-		# Build the deps first and then time only the target itself.
+		# Build the deps first (silently) and then time only the target itself.
 		make -j${PROC} > /dev/null 2>&1 && cd "$2" && make clean && time make
 		msg "Built target $2 of $1 on:"
 		date_utc
