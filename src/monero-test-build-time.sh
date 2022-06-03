@@ -110,7 +110,7 @@ do_make() {
 		msg "Building target: $2 of $1"
 		cd "$DIR_SRC/$LOCAL_COPY_NAME/$DIR_BUILD"
 		# Build the deps first (silently) and then time only the target itself.
-		$MAKE -j${PROC} -C "$2" > /dev/null 2>&1 && cd "$2" && $MAKE clean
+		$MAKE -j${PROC} > /dev/null 2>&1 && cd "$2" && $MAKE clean
 		msg "Starting timing of target: $2 of $1"
 		time $MAKE
 		msg "Built target $2 of $1 on:"
