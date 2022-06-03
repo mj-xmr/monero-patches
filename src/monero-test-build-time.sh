@@ -70,7 +70,7 @@ fi
 do_cmake() {
 	git submodule update --init --force
 	git submodule update --remote; git submodule sync && git submodule update
-	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=OFF -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON "$CMAKE_MAKE_PROG" -DUSE_UNITY=ON
+	cmake -S "$DIR_SRC/$LOCAL_COPY_NAME" -DUSE_CCACHE=OFF -DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=ON -DSTRIP_TARGETS=ON -DBUILD_GUI_DEPS=ON "$CMAKE_MAKE_PROG" -DUSE_UNITY=ON
 }
 
 
