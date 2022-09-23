@@ -7,10 +7,10 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+  schedule:
+    - cron: '0 0 * * 1'
 
-# The below variables reduce repetitions across similar targets
 env:
-  REMOVE_BUNDLED_BOOST : rm -rf /usr/local/share/boost
   APT_INSTALL_LINUX: 'sudo apt update; sudo apt -y install git'
   APT_SET_CONF: |
         echo "Acquire::Retries       \"3\";"   | sudo tee -a /etc/apt/apt.conf.d/80-custom

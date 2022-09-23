@@ -13,15 +13,16 @@ git clone --recursive https://github.com/monero-project/monero.git $MONERO_DIR
 rm $MONERO_DIR/.git -fr # not useful for this test and takes a lot of space
 echo "Compressing the master branch..."
 tar -czf $MONERO_DIR.tgz $MONERO_DIR
+ls -lh $MONERO_DIR.tgz
 
 SUCCESSFUL=()
 FAILED=()
 
 for patch in $DIR_THIS/src/*.patch; do
-	echo $patch
 	rm $MONERO_DIR -fr
 	tar -xf $MONERO_DIR.tgz
 	pushd $MONERO_DIR
+		echo "Trying to apply: $patch"
 		if git apply $patch; then
 			SUCCESSFUL+=($patch)
 		else
