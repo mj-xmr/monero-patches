@@ -1,0 +1,276 @@
+diff --git a/tests/libwallet_api_tests/scripts/README.md b/tests/libwallet_api_tests/scripts/README.md
+index f852c9e71..e8d3f5e1c 100644
+--- a/tests/libwallet_api_tests/scripts/README.md
++++ b/tests/libwallet_api_tests/scripts/README.md
+@@ -5,6 +5,11 @@
+   By default, tests expect daemon running at ```localhost:38081```,
+   can be overridden with environment variable ```TESTNET_DAEMON_ADDRESS=<your_daemon_address>```
+   [Manual](https://github.com/moneroexamples/private-testnet) explaining how to run private testnet.
++  It is benefitial to run the node with the `--disable-rpc-ban` option, because the test will be abusing the node.
++
++* Running monero node, linked to mainnet.
++  By default, tests expect daemon running at ```localhost:18081```,
++  can be overridden with environment variable ```MAINNET_DAEMON_ADDRESS=<your_daemon_address>```
+ 
+ * Directory with pre-generated wallets
+   (wallet_01.bin, wallet_02.bin,...,wallet_06.bin, some of these wallets might not be used in the tests currently). 
+@@ -12,13 +17,25 @@
+   Directory can be overriden with environment variable ```WALLETS_ROOT_DIR=<your_directory_with_wallets>```.
+   Directory and files should be writable for the user running tests.
+ 
++* The above environment variables can be conviniently modified and exported via the `conf.sh` script.
++
++## Preparation of WALLETS_ROOT_DIR
++Ideally copy all the scripts and symlink the test executable into the directory pointed by `WALLETS_ROOT_DIR` variable
++and adjust your choices via the `conf.sh` script. In such scenario, uncomment the `export WALLETS_ROOT_DIR=.` line.
++From there, run the below scripts:
+ 
+ ## Generating test wallets
+ * ```create_wallets.sh``` - this script will create wallets (wallet_01.bin, wallet_02.bin,...,wallet_06.bin) in current directory. 
+-  when running first time, please uncomment line ```#create_wallet wallet_m``` to create miner wallet as well. 
+-  This wallet should be used for mining and all test wallets supposed to be seed from this miner wallet
++  when running first time, the script will create a special wallet_m.bin miner wallet as well.
++  This wallet should be used for mining and all test wallets supposed to be seed from this miner wallet.
++
++* ```mining_start.sh``` and ```mining_stop.sh``` - helper scripts to start and stop mining on miner wallet.
++
++* ```send_funds.sh``` - script for seeding test wallets. Please run this script when you have enough money on miner wallet.
+ 
+-* ```mining_start.sh``` and ```mining_stop.sh``` - helper scripts to start and stop mining on miner wallet
++## Running the tests
++* Before running the tests, you have to source the `conf.sh` script with: `source conf.sh` or just: `. conf.sh` within the same terminal.
+ 
+-* ```send_funds.sh``` - script for seeding test wallets. Please run this script when you have enough money on miner wallet
++* The particular tests can be executed using a Regex filter, for example: `./libwallet_api_tests --gtest_filter=WalletTest1.WalletShowsBalance`.
+ 
++* Execute `./libwallet_api_tests --gtest_list_tests` to obtain the full list of available tests.
+diff --git a/tests/libwallet_api_tests/scripts/conf.sh b/tests/libwallet_api_tests/scripts/conf.sh
+new file mode 100755
+index 000000000..c91418d6c
+--- /dev/null
++++ b/tests/libwallet_api_tests/scripts/conf.sh
+@@ -0,0 +1,25 @@
++#!/bin/bash -e
++
++# path where created wallets will reside
++# By default: /var/monero/testnet_pvt
++export WALLETS_ROOT_DIR="/var/monero/testnet_pvt"
++# If the wallets are created in a different directory, please uncomment and adjust the following export:
++#export WALLETS_ROOT_DIR=.
++
++# path to monero-wallet-cli
++WALLET_CLI_DIR=.
++WALLET_CLI="$WALLET_CLI_DIR/monero-wallet-cli"
++
++# Testnet daemon defaults:
++DAEMON_PORT=38081
++DAEMON_HOST=localhost
++
++# If the daemon defaults are to be changed, please uncomment the following export:
++#export TESTNET_DAEMON_ADDRESS=$DAEMON_HOST:$DAEMON_PORT
++
++
++# Mainnet daemon defaults:
++#DAEMON_PORT_MAINNET=18081
++#DAEMON_HOST_MAINNET=$DAEMON_HOST
++#export MAINNET_DAEMON_ADDRESS=$DAEMON_HOST_MAINNET:$DAEMON_PORT_MAINNET
++
+diff --git a/tests/libwallet_api_tests/scripts/create_wallets.sh b/tests/libwallet_api_tests/scripts/create_wallets.sh
+index f33564e7f..2ba3ac14e 100755
+--- a/tests/libwallet_api_tests/scripts/create_wallets.sh
++++ b/tests/libwallet_api_tests/scripts/create_wallets.sh
+@@ -1,18 +1,27 @@
+-#!/bin/bash
++#!/bin/bash -e
++
++. ./conf.sh
+ 
+ function create_wallet {
+     wallet_name=$1
+-    echo 0 | monero-wallet-cli  --testnet --trusted-daemon --daemon-address localhost:38081 --generate-new-wallet $wallet_name --password "" --restore-height=1
++    echo 0 | "$WALLET_CLI" --testnet --trusted-daemon --daemon-address $DAEMON_HOST:$DAEMON_PORT --generate-new-wallet "${WALLETS_ROOT_DIR}/${wallet_name}.bin" --restore-height=1 --password ""
+ }
+ 
++function create_wallet_if_not_exists {
++    wallet_name=$1
++    if [ ! -f "$WALLETS_ROOT_DIR/$wallet_name" ]; then
++        create_wallet $wallet_name
++    fi
++}
+ 
+-create_wallet wallet_01.bin
+-create_wallet wallet_02.bin
+-create_wallet wallet_03.bin
+-create_wallet wallet_04.bin
+-create_wallet wallet_05.bin
+-create_wallet wallet_06.bin
+-
+-# create_wallet wallet_m
+ 
++create_wallet wallet_01
++create_wallet wallet_02
++create_wallet wallet_03
++create_wallet wallet_04
++create_wallet wallet_05
++create_wallet wallet_06
+ 
++create_wallet_if_not_exists wallet_m
++# In case you want to recreate it anyway, just uncomment the next line:
++#create_wallet wallet_m
+diff --git a/tests/libwallet_api_tests/scripts/mining_start.sh b/tests/libwallet_api_tests/scripts/mining_start.sh
+index 30e3b7fbb..b22d84a88 100755
+--- a/tests/libwallet_api_tests/scripts/mining_start.sh
++++ b/tests/libwallet_api_tests/scripts/mining_start.sh
+@@ -1,4 +1,6 @@
+-#!/bin/bash
++#!/bin/bash -e
+ 
+-rlwrap monero-wallet-cli --wallet-file wallet_m --password "" --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_m.log start_mining
++. ./conf.sh
++
++rlwrap "$WALLET_CLI" --wallet-file "$WALLETS_ROOT_DIR/wallet_m.bin" --password "" --testnet --trusted-daemon --daemon-address $DAEMON_HOST:$DAEMON_PORT --log-file "$WALLETS_ROOT_DIR/wallet_m.log" start_mining
+ 
+diff --git a/tests/libwallet_api_tests/scripts/mining_stop.sh b/tests/libwallet_api_tests/scripts/mining_stop.sh
+index fadd68085..05dfe37d0 100755
+--- a/tests/libwallet_api_tests/scripts/mining_stop.sh
++++ b/tests/libwallet_api_tests/scripts/mining_stop.sh
+@@ -1,4 +1,6 @@
+-#!/bin/bash
++#!/bin/bash -e
+ 
+-rlwrap monero-wallet-cli --wallet-file wallet_m --password "" --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_miner.log stop_mining
++. ./conf.sh
++
++rlwrap "$WALLET_CLI" --wallet-file "$WALLETS_ROOT_DIR/wallet_m.bin" --password "" --testnet --trusted-daemon --daemon-address $DAEMON_HOST:$DAEMON_PORT --log-file "$WALLETS_ROOT_DIR/wallet_m.log" stop_mining
+ 
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_1.sh b/tests/libwallet_api_tests/scripts/open_wallet_1.sh
+index 6e5a373d8..a2ed62a18 100755
+--- a/tests/libwallet_api_tests/scripts/open_wallet_1.sh
++++ b/tests/libwallet_api_tests/scripts/open_wallet_1.sh
+@@ -1,5 +1,4 @@
+-#!/bin/bash
++#!/bin/bash -e
+ 
+-
+-rlwrap monero-wallet-cli --wallet-file wallet_01.bin --password "" --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_01.log
++./open_wallet_par.sh wallet_1
+ 
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_2.sh b/tests/libwallet_api_tests/scripts/open_wallet_2.sh
+index 305af2f11..b06d478e0 100755
+--- a/tests/libwallet_api_tests/scripts/open_wallet_2.sh
++++ b/tests/libwallet_api_tests/scripts/open_wallet_2.sh
+@@ -1,5 +1,4 @@
+-#!/bin/bash
++#!/bin/bash -e
+ 
+-
+-rlwrap monero-wallet-cli --wallet-file wallet_02.bin --password "" --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_01.log
++./open_wallet_par.sh wallet_2
+ 
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_3.sh b/tests/libwallet_api_tests/scripts/open_wallet_3.sh
+index 43df4a906..b06d478e0 100755
+--- a/tests/libwallet_api_tests/scripts/open_wallet_3.sh
++++ b/tests/libwallet_api_tests/scripts/open_wallet_3.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/bash -e
+ 
+-rlwrap monero-wallet-cli --wallet-file wallet_03.bin --password "" --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_03.log
++./open_wallet_par.sh wallet_2
+ 
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_4.sh b/tests/libwallet_api_tests/scripts/open_wallet_4.sh
+index c48dd5636..203eedb50 100755
+--- a/tests/libwallet_api_tests/scripts/open_wallet_4.sh
++++ b/tests/libwallet_api_tests/scripts/open_wallet_4.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/bash -e
+ 
+-rlwrap monero-wallet-cli --wallet-file wallet_04.bin --password "" --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_04.log
++./open_wallet_par.sh wallet_4
+ 
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_5.sh b/tests/libwallet_api_tests/scripts/open_wallet_5.sh
+index 820114d48..1ca77f8cc 100755
+--- a/tests/libwallet_api_tests/scripts/open_wallet_5.sh
++++ b/tests/libwallet_api_tests/scripts/open_wallet_5.sh
+@@ -1,4 +1,5 @@
+-#!/bin/bash
++#!/bin/bash -e
++
++./open_wallet_par.sh wallet_5
+ 
+-rlwrap monero-wallet-cli --wallet-file wallet_05.bin --password "" --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_05.log
+ 
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_6.sh b/tests/libwallet_api_tests/scripts/open_wallet_6.sh
+new file mode 100755
+index 000000000..2723aec44
+--- /dev/null
++++ b/tests/libwallet_api_tests/scripts/open_wallet_6.sh
+@@ -0,0 +1,4 @@
++#!/bin/bash -e
++
++./open_wallet_par.sh wallet_6
++
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_miner.sh b/tests/libwallet_api_tests/scripts/open_wallet_miner.sh
+index 633e2519c..a93361bca 100755
+--- a/tests/libwallet_api_tests/scripts/open_wallet_miner.sh
++++ b/tests/libwallet_api_tests/scripts/open_wallet_miner.sh
+@@ -1,4 +1,3 @@
+-#!/bin/bash
+-
+-rlwrap monero-wallet-cli --wallet-file wallet_m --password "" --testnet --trusted-daemon --daemon-address 127.0.0.1:38081  --log-file wallet_m.log
++#!/bin/bash -e
+ 
++./open_wallet_par.sh wallet_m
+diff --git a/tests/libwallet_api_tests/scripts/open_wallet_par.sh b/tests/libwallet_api_tests/scripts/open_wallet_par.sh
+new file mode 100755
+index 000000000..55647a46f
+--- /dev/null
++++ b/tests/libwallet_api_tests/scripts/open_wallet_par.sh
+@@ -0,0 +1,15 @@
++#!/bin/bash -e
++
++. ./conf.sh
++
++WALLET_NAME=$1
++
++if [ -z $WALLET_NAME ]; then
++    echo "Please provide the wallet name as the 1st parameter"
++    exit 1
++fi
++echo "Opening wallet: $WALLET_NAME"
++
++
++rlwrap "$WALLET_CLI" --wallet-file "$WALLETS_ROOT_DIR/$WALLET_NAME.bin" --password "" --testnet --trusted-daemon --daemon-address $DAEMON_HOST:$DAEMON_PORT  --log-file "$WALLETS_ROOT_DIR/$WALLET_NAME.log"
++
+diff --git a/tests/libwallet_api_tests/scripts/send_funds.sh b/tests/libwallet_api_tests/scripts/send_funds.sh
+index 3ce923353..92e6c6fdf 100755
+--- a/tests/libwallet_api_tests/scripts/send_funds.sh
++++ b/tests/libwallet_api_tests/scripts/send_funds.sh
+@@ -1,12 +1,14 @@
+-#!/bin/bash
++#!/bin/bash -e
++
++. ./conf.sh
+ 
+ function send_funds {
+     local amount=$1
+-    local dest=$(cat "$2.address.txt")
++    local dest=$(cat "$WALLETS_ROOT_DIR/$2.address.txt")
+ 
+-    monero-wallet-cli --wallet-file wallet_m --password "" \
+-        --testnet --trusted-daemon --daemon-address localhost:38081  --log-file wallet_m.log \
+-        --command transfer $dest $amount 
++    "$WALLET_CLI" --wallet-file "$WALLETS_ROOT_DIR/wallet_m.bin" --password "" \
++        --testnet --trusted-daemon --daemon-address $DAEMON_HOST:$DAEMON_PORT --log-file "$WALLETS_ROOT_DIR/wallet_m.log" \
++        --command transfer $dest $amount
+ }
+ 
+ 
+@@ -27,6 +29,3 @@ seed_wallets 10
+ seed_wallets 20
+ seed_wallets 50
+ seed_wallets 100
+-
+-
+-
