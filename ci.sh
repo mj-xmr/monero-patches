@@ -2,6 +2,7 @@
 
 DIR_THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 WDIR=/tmp/monero/monero-patches-build
+LOG_FILE=$DIR_THIS/log.txt
 MONERO_DIR=monero-master
 mkdir -p $WDIR && cd $WDIR
 
@@ -32,14 +33,14 @@ for patch in $DIR_THIS/src/*.patch; do
 done
 
 print_patches() {
-	echo ""
-	echo "===================="
-	echo "Listing $1:"
-	echo "===================="
+	echo "" | tee -a $LOG_FILE
+	echo "====================" | tee -a $LOG_FILE
+	echo "Listing $1:" | tee -a $LOG_FILE
+	echo "====================" | tee -a $LOG_FILE
 }
-
+echo "" > $LOG_FILE
 print_patches "failed" 
-printf '%s\n' "${FAILED[@]}"
+printf '%s\n' "${FAILED[@]}" | tee -a $LOG_FILE
 
 print_patches "successful"
-printf '%s\n' "${SUCCESSFUL[@]}"
+printf '%s\n' "${SUCCESSFUL[@]}" | tee -a $LOG_FILE
