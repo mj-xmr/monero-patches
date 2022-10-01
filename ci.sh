@@ -2,35 +2,28 @@
 
 DIR_THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 WDIR=/tmp/monero/monero-patches-build
-LOG_FILE=$DIR_THIS/log.txt
-MONERO_DIR=monero-master
+LOG=log.txt
+MONERO_MASTER=master
+MONERO_RELEASE=release
 mkdir -p $WDIR && cd $WDIR
 
-if [ -d $MONERO_DIR ]; then
-	rm $MONERO_DIR -fr
-fi
-
-git clone --recursive https://github.com/monero-project/monero.git $MONERO_DIR
-rm $MONERO_DIR/.git -fr # not useful for this test and takes a lot of space
-echo "Compressing the master branch..."
-tar -czf $MONERO_DIR.tgz $MONERO_DIR
-ls -lh $MONERO_DIR.tgz
-
-SUCCESSFUL=()
-FAILED=()
-
-for patch in $DIR_THIS/src/*.patch; do
-	rm $MONERO_DIR -fr
-	tar -xf $MONERO_DIR.tgz
-	pushd $MONERO_DIR
-		echo "Trying to apply: $patch"
-		if git apply $patch; then
-			SUCCESSFUL+=($patch)
-		else
-			FAILED+=($patch)
-		fi
+ALL_VERS="$MONERO_MASTER $MONERO_RELEASE"
+for VERSION in $ALL_VERS; do
+	echo $VERSION
+	if [ -d $VERSION ]; then
+		echo "Removing $VERSION"
+		rm $VERSION -fr
+	fi
+	git clone --recursive https://github.com/monero-project/monero.git $VERSION
+	pushd $VERSION 
+		git checkout $(git branch -a | grep $VERSION | tail -1)
 	popd
+	rm $VERSION/.git -fr # not useful for this test and takes a lot of space
+	echo "Compressing the $VERSION branch..."
+	tar -czf $VERSION.tgz $VERSION
+	ls -lh $VERSION.tgz
 done
+
 
 print_patches() {
 	echo "" | tee -a $LOG_FILE
@@ -38,9 +31,36 @@ print_patches() {
 	echo "Listing $1:" | tee -a $LOG_FILE
 	echo "====================" | tee -a $LOG_FILE
 }
-echo "" > $LOG_FILE
-print_patches "failed" 
-printf '%s\n' "${FAILED[@]}" | tee -a $LOG_FILE
 
-print_patches "successful"
-printf '%s\n' "${SUCCESSFUL[@]}" | tee -a $LOG_FILE
+report() {
+	DIR="$DIR_THIS/out"
+	mkdir -p $DIR
+	LOG_FILE=$DIR/$1-$LOG
+	echo "" > $LOG_FILE
+	print_patches "failed" $LOG_FILE 
+	printf '%s\n' "${FAILED[@]}" | tee -a $LOG_FILE
+
+	print_patches "successful" $LOG_FILE
+	printf '%s\n' "${SUCCESSFUL[@]}" | tee -a $LOG_FILE
+}
+
+
+for VERSION in $ALL_VERS; do
+	SUCCESSFUL=()
+	FAILED=()
+	for patch in $DIR_THIS/src/*.patch; do
+		rm $VERSION -fr
+		tar -xf $VERSION.tgz
+		pushd $VERSION
+			echo "Trying to apply: $patch"
+			if git apply $patch; then
+				SUCCESSFUL+=($patch)
+			else
+				FAILED+=($patch)
+			fi
+		popd
+	done
+	report $VERSION
+done
+
+ 

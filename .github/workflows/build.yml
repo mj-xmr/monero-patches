@@ -30,6 +30,8 @@ jobs:
       run: ${{env.APT_INSTALL_LINUX}}
     - name: build
       run: ./ci.sh
-    - name: report
-      run: cat log.txt
+    - name: report master
+      run: cat out/master-log.txt
+    - name: report release
+      run: cat out/release-log.txt
 
