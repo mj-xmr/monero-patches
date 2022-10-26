@@ -3,11 +3,10 @@
 DIR_THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 WDIR=/tmp/monero/monero-patches-build
 LOG=log.txt
-MONERO_MASTER=master
-MONERO_RELEASE=release
+
 mkdir -p $WDIR && cd $WDIR
 
-ALL_VERS="$MONERO_MASTER $MONERO_RELEASE"
+ALL_VERS="release-v0.17 release-v0.18 master"
 for VERSION in $ALL_VERS; do
 	echo $VERSION
 	if [ -d $VERSION ]; then
@@ -16,7 +15,8 @@ for VERSION in $ALL_VERS; do
 	fi
 	git clone --recursive https://github.com/monero-project/monero.git $VERSION
 	pushd $VERSION 
-		git checkout $(git branch -a | grep $VERSION | tail -1)
+		#git checkout $(git branch -a | grep $VERSION | tail -1) # Automates latest release detection
+		git checkout $VERSION
 	popd
 	rm $VERSION/.git -fr # not useful for this test and takes a lot of space
 	echo "Compressing the $VERSION branch..."
