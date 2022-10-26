@@ -6,7 +6,7 @@ LOG=log.txt
 
 mkdir -p $WDIR && cd $WDIR
 
-ALL_VERS="master release-v0.17 release-v0.18"
+ALL_VERS="release-v0.17 release-v0.18 master"
 for VERSION in $ALL_VERS; do
 	echo $VERSION
 	if [ -d $VERSION ]; then
