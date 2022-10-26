@@ -32,6 +32,8 @@ jobs:
       run: ./ci.sh
     - name: report master
       run: cat out/master-log.txt
-    - name: report release
-      run: cat out/release-log.txt
+    - name: report release-v0.17
+      run: cat out/release-v0.17-log.txt
+    - name: report release-v0.18
+      run: cat out/release-v0.18-log.txt
 
