@@ -3,6 +3,7 @@
 DIR_THIS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 WDIR=/tmp/monero/monero-patches-build
 LOG=log.txt
+PROC=$(nproc)
 
 mkdir -p $WDIR && cd $WDIR
 
@@ -16,7 +17,7 @@ for VERSION in $ALL_VERS; do
 	fi
 	if [ ! -f $ARCHIVE ]; then
 		git clone --recursive https://github.com/monero-project/monero.git $VERSION
-		pushd $VERSION 
+		pushd $VERSION
 			#git checkout $(git branch -a | grep $VERSION | tail -1) # Automates latest release detection
 			git checkout $VERSION
 		popd
@@ -45,12 +46,16 @@ report() {
 
 	print_patches "successful" $LOG_FILE
 	printf '%s\n' "${SUCCESSFUL[@]}" | tee -a $LOG_FILE
+	
+	print_patches "failed build" $LOG_FILE
+	printf '%s\n' "${FAILED_BUILD[@]}" | tee -a $LOG_FILE
 }
 
 
 for VERSION in $ALL_VERS; do
 	SUCCESSFUL=()
 	FAILED=()
+	FAILED_BUILD=()
 	for patch in $DIR_THIS/src/*.patch; do
 		rm $VERSION -fr
 		tar -xf $VERSION.tgz
@@ -58,6 +63,13 @@ for VERSION in $ALL_VERS; do
 			echo "Trying to apply: $patch"
 			if git apply $patch; then
 				SUCCESSFUL+=($patch)
+				mkdir -p build
+				pushd build
+				if ! (cmake ../ && make -j$PROC); then
+					FAILED_BUILD+=($patch)
+				fi
+				popd
+				
 			else
 				FAILED+=($patch)
 			fi
