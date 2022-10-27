@@ -73,7 +73,7 @@ for VERSION in $ALL_VERS; do
 				if [ "$BUILD" == "true" ]; then
 					mkdir -p build
 					pushd build
-					if ! (cmake ../ && make -j$PROC); then
+					if ! (cmake ../ -DCMAKE_BUILD_TYPE=Release -DSTRIP_TARGETS=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTS=ON && make -j$PROC); then
 						FAILED_BUILD+=($patch)
 					fi
 					popd
