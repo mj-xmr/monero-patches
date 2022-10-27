@@ -35,7 +35,7 @@ jobs:
     - name: install dependencies
       run: ${{env.APT_INSTALL_LINUX}}
     - name: build
-      run: ./ci.sh
+      run: ./ci.sh 1
     - name: report release-v0.17
       run: cat out/release-v0.17-log.txt
     - name: report release-v0.18

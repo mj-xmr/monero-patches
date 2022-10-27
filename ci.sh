@@ -5,6 +5,13 @@ WDIR=/tmp/monero/monero-patches-build
 LOG=log.txt
 PROC=$(nproc)
 
+BUILD=false
+if [ ! -z $1 ]; then
+	BUILD=true
+	echo "Installing 'monero' dependencies..."
+	sudo apt install build-essential cmake pkg-config libssl-dev libzmq3-dev libunbound-dev libsodium-dev libunwind8-dev liblzma-dev libreadline6-dev libexpat1-dev libpgm-dev libhidapi-dev libusb-1.0-0-dev libprotobuf-dev protobuf-compiler libudev-dev libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-locale-dev libboost-program-options-dev libboost-regex-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev python3 ccache
+fi
+
 mkdir -p $WDIR && cd $WDIR
 
 ALL_VERS="release-v0.17 release-v0.18 master"
@@ -63,12 +70,14 @@ for VERSION in $ALL_VERS; do
 			echo "Trying to apply: $patch"
 			if git apply $patch; then
 				SUCCESSFUL+=($patch)
-				mkdir -p build
-				pushd build
-				if ! (cmake ../ && make -j$PROC); then
-					FAILED_BUILD+=($patch)
+				if [ $BUILD -eq true ]; then
+					mkdir -p build
+					pushd build
+					if ! (cmake ../ && make -j$PROC); then
+						FAILED_BUILD+=($patch)
+					fi
+					popd
 				fi
-				popd
 				
 			else
 				FAILED+=($patch)
