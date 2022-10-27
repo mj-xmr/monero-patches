@@ -70,7 +70,7 @@ for VERSION in $ALL_VERS; do
 			echo "Trying to apply: $patch"
 			if git apply $patch; then
 				SUCCESSFUL+=($patch)
-				if [ $BUILD -eq true ]; then
+				if [ "$BUILD" == "true" ]; then
 					mkdir -p build
 					pushd build
 					if ! (cmake ../ && make -j$PROC); then
