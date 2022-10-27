@@ -9,19 +9,22 @@ mkdir -p $WDIR && cd $WDIR
 ALL_VERS="release-v0.17 release-v0.18 master"
 for VERSION in $ALL_VERS; do
 	echo $VERSION
+	ARCHIVE=$VERSION.tgz
 	if [ -d $VERSION ]; then
 		echo "Removing $VERSION"
 		rm $VERSION -fr
 	fi
-	git clone --recursive https://github.com/monero-project/monero.git $VERSION
-	pushd $VERSION 
-		#git checkout $(git branch -a | grep $VERSION | tail -1) # Automates latest release detection
-		git checkout $VERSION
-	popd
-	rm $VERSION/.git -fr # not useful for this test and takes a lot of space
-	echo "Compressing the $VERSION branch..."
-	tar -czf $VERSION.tgz $VERSION
-	ls -lh $VERSION.tgz
+	if [ ! -f $ARCHIVE ]; then
+		git clone --recursive https://github.com/monero-project/monero.git $VERSION
+		pushd $VERSION 
+			#git checkout $(git branch -a | grep $VERSION | tail -1) # Automates latest release detection
+			git checkout $VERSION
+		popd
+		rm $VERSION/.git -fr # not useful for this test and takes a lot of space
+		echo "Compressing the $VERSION branch..."
+		tar -czf $ARCHIVE $VERSION
+	fi
+	ls -lh $ARCHIVE
 done
 
 
