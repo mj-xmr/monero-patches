@@ -20,22 +20,10 @@ index 759cb3249..44145483c 100644
 +    return calculate_fee_from_weight(base_fee, weight, fee_multiplier, fee_quantization_mask);
 +}
 diff --git a/src/wallet/wallet2.h b/src/wallet/wallet2.h
-index 322f3b104..ac6e2dbb9 100644
+index 322f3b104..718063410 100644
 --- a/src/wallet/wallet2.h
 +++ b/src/wallet/wallet2.h
-@@ -88,6 +88,11 @@
- class Serialization_portability_wallet_Test;
- class wallet_accessor_test;
- 
-+
-+uint64_t calculate_fee_wrap(bool use_per_byte_fee, const cryptonote::transaction &tx, size_t blob_size, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask);
-+uint64_t calculate_fee_wrap(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier);
-+uint64_t calculate_fee_from_weight_wrap(uint64_t base_fee, uint64_t weight, uint64_t fee_multiplier, uint64_t fee_quantization_mask);
-+
- namespace tools
- {
-   class ringdb;
-@@ -110,7 +115,7 @@ namespace tools
+@@ -110,7 +110,7 @@ namespace tools
        result_type operator()() { return crypto::rand<result_type>(); }
      } engine;
  
@@ -44,11 +32,14 @@ index 322f3b104..ac6e2dbb9 100644
      std::gamma_distribution<double> gamma;
      const std::vector<uint64_t> &rct_offsets;
      const uint64_t *begin, *end;
-@@ -2353,3 +2358,4 @@ namespace tools
+@@ -2353,3 +2353,7 @@ namespace tools
    }
    //----------------------------------------------------------------------------------------------------
  }
 +
++uint64_t calculate_fee_wrap(bool use_per_byte_fee, const cryptonote::transaction &tx, size_t blob_size, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask);
++uint64_t calculate_fee_wrap(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier);
++uint64_t calculate_fee_from_weight_wrap(uint64_t base_fee, uint64_t weight, uint64_t fee_multiplier, uint64_t fee_quantization_mask);
 diff --git a/tests/unit_tests/CMakeLists.txt b/tests/unit_tests/CMakeLists.txt
 index a5984b2c9..8b3c030a4 100644
 --- a/tests/unit_tests/CMakeLists.txt
