@@ -345,7 +345,7 @@ index 000000000..287e01dc2
 +const uint64_t wallet2_wrapper::MIN_RCT_LENGTH = CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE + 1;
 +
 +wallet2_wrapper::wallet2_wrapper()
-+: pwallet(std::make_unique<tools::wallet2>())
++: pwallet(std::unique_ptr<tools::wallet2>())
 +{
 +
 +}
@@ -381,7 +381,7 @@ index 000000000..287e01dc2
 +{
 +    //if (ppicker == nullptr)
 +    {
-+        ppicker = std::make_unique<tools::gamma_picker_my>(rct_offsets);
++        ppicker.reset(new tools::gamma_picker_my(rct_offsets));
 +        //ppicker->dump_vars("", "");
 +        int a = 0; int b =a ;
 +    }
