@@ -14,7 +14,7 @@ fi
 
 mkdir -p $WDIR && cd $WDIR
 
-ALL_VERS="release-v0.17 release-v0.18 master"
+ALL_VERS="v0.16.0.3 release-v0.17 release-v0.18 master"
 for VERSION in $ALL_VERS; do
 	echo $VERSION
 	ARCHIVE=$VERSION.tgz
