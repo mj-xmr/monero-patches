@@ -1,27 +1,47 @@
 diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
-index c3ba34260..a9597e9ab 100644
+index 17ff0e44b..2d30fe384 100644
 --- a/src/wallet/wallet2.cpp
 +++ b/src/wallet/wallet2.cpp
-@@ -13882,3 +13882,37 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
+@@ -14613,3 +14613,70 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
  }
  //----------------------------------------------------------------------------------------------------
  }
 +
 +uint64_t calculate_fee_wrap(bool use_per_byte_fee, const cryptonote::transaction &tx, size_t blob_size, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask)
 +{
++#ifdef HF_VERSION_2021_SCALING
++    return calculate_fee(use_per_byte_fee, tx, blob_size, base_fee, fee_quantization_mask);
++#else
 +    return calculate_fee(use_per_byte_fee, tx, blob_size, base_fee, fee_multiplier, fee_quantization_mask);
++#endif
 +}
 +uint64_t calculate_fee_wrap(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier)
 +{
++#ifdef HF_VERSION_2021_SCALING
++    return calculate_fee(fee_per_kb, bytes);
++#else
 +    return calculate_fee(fee_per_kb, bytes, fee_multiplier);
++#endif
 +}
 +uint64_t calculate_fee_from_weight_wrap(uint64_t base_fee, uint64_t weight, uint64_t fee_multiplier, uint64_t fee_quantization_mask)
 +{
++#ifdef HF_VERSION_2021_SCALING
++    return calculate_fee_from_weight(base_fee, weight, fee_quantization_mask);
++#else
 +    return calculate_fee_from_weight(base_fee, weight, fee_multiplier, fee_quantization_mask);
++#endif
 +}
 +uint8_t get_bulletproof_fork_wrap()
 +{
 +    return get_bulletproof_fork();
++}
++uint8_t get_bulletproof_plus_fork_wrap()
++{
++    #ifdef HF_VERSION_2021_SCALING
++        return get_bulletproof_plus_fork();
++    #else
++        return 0;
++    #endif // HF_VERSION_2021_SCALING
 +}
 +uint8_t get_clsag_fork_wrap()
 +{
@@ -31,20 +51,33 @@ index c3ba34260..a9597e9ab 100644
 +    return 0;
 +#endif
 +}
-+size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag)
++uint8_t get_view_tag_fork_wrap()
++{
++    #ifdef HF_VERSION_2021_SCALING
++        return get_view_tag_fork();
++    #else
++        return 0;
++    #endif // HF_VERSION_2021_SCALING
++}
++
++size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag, bool bulletproof_plus, bool use_view_tags)
 +{
 +#ifdef HF_VERSION_CLSAG // rougher way of detecting CLSAG
-+    return estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
++    #ifdef HF_VERSION_2021_SCALING
++        return estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag, bulletproof_plus, use_view_tags);
++    #else
++        return estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof, clsag);
++    #endif
 +#else // HF_VERSION_CLSAG
 +    return estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof);
 +#endif
 +}
 +
 diff --git a/src/wallet/wallet2.h b/src/wallet/wallet2.h
-index 3a14215b3..da84fbf08 100644
+index 3fcefd16f..867b59958 100644
 --- a/src/wallet/wallet2.h
 +++ b/src/wallet/wallet2.h
-@@ -104,7 +104,7 @@ namespace tools
+@@ -111,7 +111,7 @@ namespace tools
        result_type operator()() { return crypto::rand<result_type>(); }
      } engine;
  
@@ -53,7 +86,7 @@ index 3a14215b3..da84fbf08 100644
      std::gamma_distribution<double> gamma;
      const std::vector<uint64_t> &rct_offsets;
      const uint64_t *begin, *end;
-@@ -2206,3 +2206,11 @@ namespace tools
+@@ -2503,3 +2503,12 @@ namespace tools
    }
    //----------------------------------------------------------------------------------------------------
  }
@@ -62,14 +95,15 @@ index 3a14215b3..da84fbf08 100644
 +uint64_t calculate_fee_wrap(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier);
 +uint64_t calculate_fee_from_weight_wrap(uint64_t base_fee, uint64_t weight, uint64_t fee_multiplier, uint64_t fee_quantization_mask);
 +uint8_t get_bulletproof_fork_wrap();
++uint8_t get_bulletproof_plus_fork_wrap();
 +uint8_t get_clsag_fork_wrap();
-+size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag);
-+
++uint8_t get_view_tag_fork_wrap();
++size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag, bool bulletproof_plus, bool use_view_tags);
 diff --git a/tests/unit_tests/CMakeLists.txt b/tests/unit_tests/CMakeLists.txt
-index 9c24a5ec7..5c51c7a21 100644
+index 55818dc93..c05cd955b 100644
 --- a/tests/unit_tests/CMakeLists.txt
 +++ b/tests/unit_tests/CMakeLists.txt
-@@ -96,6 +96,12 @@ set(unit_tests_sources
+@@ -100,6 +100,12 @@ set(unit_tests_sources
    aligned.cpp
    rpc_version_str.cpp
    zmq_rpc.cpp)
@@ -82,7 +116,7 @@ index 9c24a5ec7..5c51c7a21 100644
  
  set(unit_tests_headers
    unit_tests_utils.h)
-@@ -134,6 +140,8 @@ if (NOT MSVC)
+@@ -139,6 +145,8 @@ if (NOT MSVC)
        COMPILE_FLAGS " -Wno-undef -Wno-sign-compare")
  endif ()
  
@@ -319,10 +353,10 @@ index 000000000..67a74cc21
 +
 diff --git a/tests/unit_tests/decoy_wrappers.cpp b/tests/unit_tests/decoy_wrappers.cpp
 new file mode 100644
-index 000000000..7441be3a0
+index 000000000..ceef36046
 --- /dev/null
 +++ b/tests/unit_tests/decoy_wrappers.cpp
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,197 @@
 +// Copyright (c) 2018-2022, The Monero Project
 +
 +// 
@@ -496,35 +530,37 @@ index 000000000..7441be3a0
 +
 +uint64_t wallet2_wrapper::calculate_fee_from_weight(uint64_t base_fee, uint64_t weight, uint64_t fee_multiplier, uint64_t fee_quantization_mask) const
 +{
++    //const uint64_t fee_quantization_mask = pwallet->get_fee_quantization_mask();
 +    return calculate_fee_from_weight_wrap(base_fee, weight, fee_multiplier, fee_quantization_mask);
 +}
 +
 +uint64_t wallet2_wrapper::create_transactions_2_dummy() const
 +{
-+    const bool use_rct = pwallet->use_fork_rules(4, 0);
-+    const bool bulletproof = pwallet->use_fork_rules(get_bulletproof_fork_wrap(), 0);
-+    const bool clsag = pwallet->use_fork_rules(get_clsag_fork_wrap(), 0);
++    tools::wallet2 & wal = *pwallet;
++    const bool use_rct = wal.use_fork_rules(4, 0);
++    const bool bulletproof = wal.use_fork_rules(get_bulletproof_fork_wrap(), 0);
++    const bool bulletproof_plus = wal.use_fork_rules(get_bulletproof_plus_fork_wrap(), 0);
++    const bool clsag = wal.use_fork_rules(get_clsag_fork_wrap(), 0);
++    const bool use_view_tags = wal.use_fork_rules(get_view_tag_fork_wrap(), 0);
 +    
 +    std::vector<uint8_t> extra = {0, 1, 3};
 +    uint32_t priority = 3;
 +    const size_t fake_outs_count = 6;
 +    
-+    const uint64_t base_fee  = pwallet->get_base_fee();
-+    const uint64_t fee_multiplier = pwallet->get_fee_multiplier(priority, pwallet->get_fee_algorithm());
-+    const uint64_t fee_quantization_mask = pwallet->get_fee_quantization_mask();
-+
-+
-+    const uint64_t min_fee = (fee_multiplier * base_fee * estimate_tx_size_wrap(use_rct, 1, fake_outs_count, 2, extra.size(), bulletproof, clsag));
++    const uint64_t base_fee  = wal.get_base_fee();
++    const uint64_t fee_multiplier = wal.get_fee_multiplier(priority, wal.get_fee_algorithm());
++    
++    const uint64_t min_fee = (fee_multiplier * base_fee * estimate_tx_size_wrap(use_rct, 1, fake_outs_count, 2, extra.size(), bulletproof, clsag, bulletproof_plus, use_view_tags));
 +
 +    return min_fee;
 +}
-+
+\ No newline at end of file
 diff --git a/tests/unit_tests/decoy_wrappers.h b/tests/unit_tests/decoy_wrappers.h
 new file mode 100644
-index 000000000..ccce157b5
+index 000000000..940db94eb
 --- /dev/null
 +++ b/tests/unit_tests/decoy_wrappers.h
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,74 @@
 +// Copyright (c) 2018-2022, The Monero Project
 +
 +// 
@@ -599,4 +635,4 @@ index 000000000..ccce157b5
 +    std::unique_ptr<tools::wallet2> pwallet;
 +    std::unique_ptr<tools::gamma_picker_my> ppicker;
 +};
-+
+\ No newline at end of file
