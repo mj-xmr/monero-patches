@@ -1,8 +1,8 @@
 diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
-index cc148dd49..441a5d9e4 100644
+index c3ba34260..a9597e9ab 100644
 --- a/src/wallet/wallet2.cpp
 +++ b/src/wallet/wallet2.cpp
-@@ -13988,3 +13988,36 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
+@@ -13882,3 +13882,37 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
  }
  //----------------------------------------------------------------------------------------------------
  }
@@ -39,11 +39,12 @@ index cc148dd49..441a5d9e4 100644
 +    return estimate_tx_size(use_rct, n_inputs, mixin, n_outputs, extra_size, bulletproof);
 +#endif
 +}
++
 diff --git a/src/wallet/wallet2.h b/src/wallet/wallet2.h
-index 8d54ec20d..953d4d2ea 100644
+index 3a14215b3..da84fbf08 100644
 --- a/src/wallet/wallet2.h
 +++ b/src/wallet/wallet2.h
-@@ -110,7 +110,7 @@ namespace tools
+@@ -104,7 +104,7 @@ namespace tools
        result_type operator()() { return crypto::rand<result_type>(); }
      } engine;
  
@@ -52,7 +53,7 @@ index 8d54ec20d..953d4d2ea 100644
      std::gamma_distribution<double> gamma;
      const std::vector<uint64_t> &rct_offsets;
      const uint64_t *begin, *end;
-@@ -2319,3 +2319,10 @@ namespace tools
+@@ -2206,3 +2206,11 @@ namespace tools
    }
    //----------------------------------------------------------------------------------------------------
  }
@@ -63,12 +64,12 @@ index 8d54ec20d..953d4d2ea 100644
 +uint8_t get_bulletproof_fork_wrap();
 +uint8_t get_clsag_fork_wrap();
 +size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag);
-\ No newline at end of file
++
 diff --git a/tests/unit_tests/CMakeLists.txt b/tests/unit_tests/CMakeLists.txt
-index a5984b2c9..327b08f20 100644
+index 9c24a5ec7..5c51c7a21 100644
 --- a/tests/unit_tests/CMakeLists.txt
 +++ b/tests/unit_tests/CMakeLists.txt
-@@ -97,6 +97,12 @@ set(unit_tests_sources
+@@ -96,6 +96,12 @@ set(unit_tests_sources
    aligned.cpp
    rpc_version_str.cpp
    zmq_rpc.cpp)
@@ -81,7 +82,7 @@ index a5984b2c9..327b08f20 100644
  
  set(unit_tests_headers
    unit_tests_utils.h)
-@@ -136,6 +142,8 @@ if (NOT MSVC)
+@@ -134,6 +140,8 @@ if (NOT MSVC)
        COMPILE_FLAGS " -Wno-undef -Wno-sign-compare")
  endif ()
  
@@ -318,10 +319,10 @@ index 000000000..67a74cc21
 +
 diff --git a/tests/unit_tests/decoy_wrappers.cpp b/tests/unit_tests/decoy_wrappers.cpp
 new file mode 100644
-index 000000000..dbac8cb2b
+index 000000000..7441be3a0
 --- /dev/null
 +++ b/tests/unit_tests/decoy_wrappers.cpp
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,196 @@
 +// Copyright (c) 2018-2022, The Monero Project
 +
 +// 
@@ -517,13 +518,13 @@ index 000000000..dbac8cb2b
 +
 +    return min_fee;
 +}
-\ No newline at end of file
++
 diff --git a/tests/unit_tests/decoy_wrappers.h b/tests/unit_tests/decoy_wrappers.h
 new file mode 100644
-index 000000000..940db94eb
+index 000000000..ccce157b5
 --- /dev/null
 +++ b/tests/unit_tests/decoy_wrappers.h
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,75 @@
 +// Copyright (c) 2018-2022, The Monero Project
 +
 +// 
@@ -598,4 +599,4 @@ index 000000000..940db94eb
 +    std::unique_ptr<tools::wallet2> pwallet;
 +    std::unique_ptr<tools::gamma_picker_my> ppicker;
 +};
-\ No newline at end of file
++
