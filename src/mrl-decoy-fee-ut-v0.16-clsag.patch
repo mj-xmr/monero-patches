@@ -1,13 +1,11 @@
 diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
-index c3ba34260..319a44351 100644
+index cc148dd49..441a5d9e4 100644
 --- a/src/wallet/wallet2.cpp
 +++ b/src/wallet/wallet2.cpp
-@@ -13882,3 +13882,36 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
+@@ -13988,3 +13988,36 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
  }
  //----------------------------------------------------------------------------------------------------
  }
-+
-+uint8_t get_clsag_fork() __attribute__((weak)); // avoid missing declaration
 +
 +uint64_t calculate_fee_wrap(bool use_per_byte_fee, const cryptonote::transaction &tx, size_t blob_size, uint64_t base_fee, uint64_t fee_multiplier, uint64_t fee_quantization_mask)
 +{
@@ -27,9 +25,11 @@ index c3ba34260..319a44351 100644
 +}
 +uint8_t get_clsag_fork_wrap()
 +{
-+    if (get_clsag_fork)
-+        return get_clsag_fork();
++#ifdef HF_VERSION_CLSAG // rougher way of detecting CLSAG
++    return get_clsag_fork();
++#else
 +    return 0;
++#endif
 +}
 +size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag)
 +{
@@ -40,10 +40,10 @@ index c3ba34260..319a44351 100644
 +#endif
 +}
 diff --git a/src/wallet/wallet2.h b/src/wallet/wallet2.h
-index 3a14215b3..22f62ed94 100644
+index 8d54ec20d..953d4d2ea 100644
 --- a/src/wallet/wallet2.h
 +++ b/src/wallet/wallet2.h
-@@ -104,7 +104,7 @@ namespace tools
+@@ -110,7 +110,7 @@ namespace tools
        result_type operator()() { return crypto::rand<result_type>(); }
      } engine;
  
@@ -52,7 +52,7 @@ index 3a14215b3..22f62ed94 100644
      std::gamma_distribution<double> gamma;
      const std::vector<uint64_t> &rct_offsets;
      const uint64_t *begin, *end;
-@@ -2206,3 +2206,10 @@ namespace tools
+@@ -2319,3 +2319,10 @@ namespace tools
    }
    //----------------------------------------------------------------------------------------------------
  }
@@ -65,10 +65,10 @@ index 3a14215b3..22f62ed94 100644
 +size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag);
 \ No newline at end of file
 diff --git a/tests/unit_tests/CMakeLists.txt b/tests/unit_tests/CMakeLists.txt
-index 9c24a5ec7..5c51c7a21 100644
+index a5984b2c9..327b08f20 100644
 --- a/tests/unit_tests/CMakeLists.txt
 +++ b/tests/unit_tests/CMakeLists.txt
-@@ -96,6 +96,12 @@ set(unit_tests_sources
+@@ -97,6 +97,12 @@ set(unit_tests_sources
    aligned.cpp
    rpc_version_str.cpp
    zmq_rpc.cpp)
@@ -81,7 +81,7 @@ index 9c24a5ec7..5c51c7a21 100644
  
  set(unit_tests_headers
    unit_tests_utils.h)
-@@ -134,6 +140,8 @@ if (NOT MSVC)
+@@ -136,6 +142,8 @@ if (NOT MSVC)
        COMPILE_FLAGS " -Wno-undef -Wno-sign-compare")
  endif ()
  
