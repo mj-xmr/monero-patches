@@ -1,3 +1,24 @@
+diff --git a/.gitmodules b/.gitmodules
+index 3cf831bcd..15ff406ec 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -18,3 +18,6 @@
+ 	path = external/supercop
+ 	url = https://github.com/monero-project/supercop
+ 	branch = monero
++[submodule "external/EnjoLib-mj"]
++	path = external/EnjoLib-mj
++	url = https://github.com/mj-xmr/EnjoLib-mj.git
+diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
+index 7ae4ba750..0287d4ea6 100644
+--- a/external/CMakeLists.txt
++++ b/external/CMakeLists.txt
+@@ -83,4 +83,5 @@ endif()
+ add_subdirectory(db_drivers)
+ add_subdirectory(easylogging++)
+ add_subdirectory(qrcodegen)
++add_subdirectory(EnjoLib-mj)
+ add_subdirectory(randomx EXCLUDE_FROM_ALL)
 diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
 index cc148dd49..9650193d1 100644
 --- a/src/wallet/wallet2.cpp
@@ -100,7 +121,7 @@ index 8d54ec20d..734c40698 100644
 +uint8_t get_view_tag_fork_wrap();
 +size_t estimate_tx_size_wrap(bool use_rct, int n_inputs, int mixin, int n_outputs, size_t extra_size, bool bulletproof, bool clsag, bool bulletproof_plus, bool use_view_tags);
 diff --git a/tests/unit_tests/CMakeLists.txt b/tests/unit_tests/CMakeLists.txt
-index a5984b2c9..2d1159a38 100644
+index a5984b2c9..5e099faf0 100644
 --- a/tests/unit_tests/CMakeLists.txt
 +++ b/tests/unit_tests/CMakeLists.txt
 @@ -97,6 +97,13 @@ set(unit_tests_sources
@@ -117,7 +138,15 @@ index a5984b2c9..2d1159a38 100644
  
  set(unit_tests_headers
    unit_tests_utils.h)
-@@ -136,6 +143,8 @@ if (NOT MSVC)
+@@ -106,6 +113,7 @@ add_executable(unit_tests
+   ${unit_tests_headers})
+ target_link_libraries(unit_tests
+   PRIVATE
++    EnjoLib
+     ringct
+     cryptonote_protocol
+     cryptonote_core
+@@ -136,6 +144,8 @@ if (NOT MSVC)
        COMPILE_FLAGS " -Wno-undef -Wno-sign-compare")
  endif ()
  
@@ -354,7 +383,7 @@ index 000000000..67a74cc21
 +
 diff --git a/tests/unit_tests/decoy_wrappers.cpp b/tests/unit_tests/decoy_wrappers.cpp
 new file mode 100644
-index 000000000..c016679be
+index 000000000..6b2d8ea7a
 --- /dev/null
 +++ b/tests/unit_tests/decoy_wrappers.cpp
 @@ -0,0 +1,206 @@
@@ -535,7 +564,7 @@ index 000000000..c016679be
 +    return calculate_fee_from_weight_wrap(base_fee, weight, fee_multiplier, fee_quantization_mask);
 +}
 +
-+uint64_t wallet2_wrapper::create_transactions_2_dummy(const std::vector<uint8_t> & extra) const
++uint64_t wallet2_wrapper::create_transactions_2_dummy(bool clsag, const std::vector<uint8_t> & extra) const
 +{
 +    tools::wallet2 & wal = *pwallet;
 +    //const bool use_rct = wal.use_fork_rules(4, 0);
@@ -547,7 +576,7 @@ index 000000000..c016679be
 +    const bool use_rct = true;
 +    const bool bulletproof = true;
 +    const bool bulletproof_plus = true;
-+    const bool clsag = true;
++    //const bool clsag = true;
 +    const bool use_view_tags = true;
 +    
 +    //std::vector<uint8_t> extra = {0, 1, 3};
@@ -567,7 +596,7 @@ index 000000000..c016679be
 \ No newline at end of file
 diff --git a/tests/unit_tests/decoy_wrappers.h b/tests/unit_tests/decoy_wrappers.h
 new file mode 100644
-index 000000000..5bcb275f1
+index 000000000..2875bd729
 --- /dev/null
 +++ b/tests/unit_tests/decoy_wrappers.h
 @@ -0,0 +1,74 @@
@@ -638,7 +667,7 @@ index 000000000..5bcb275f1
 +    uint64_t calculate_fee(uint64_t fee_per_kb, size_t bytes, uint64_t fee_multiplier) const;
 +    uint64_t calculate_fee_from_weight(uint64_t base_fee, uint64_t weight, uint64_t fee_multiplier, uint64_t fee_quantization_mask) const;
 +    
-+    uint64_t create_transactions_2_dummy(const std::vector<uint8_t> & extra) const;
++    uint64_t create_transactions_2_dummy(bool clsag, const std::vector<uint8_t> & extra) const;
 +
 +    
 +private:
@@ -646,90 +675,3 @@ index 000000000..5bcb275f1
 +    std::unique_ptr<tools::gamma_picker_my> ppicker;
 +};
 \ No newline at end of file
-diff --git a/tests/unit_tests/fee_fingerprinting.cpp b/tests/unit_tests/fee_fingerprinting.cpp
-new file mode 100644
-index 000000000..46add6e74
---- /dev/null
-+++ b/tests/unit_tests/fee_fingerprinting.cpp
-@@ -0,0 +1,81 @@
-+// Copyright (c) 2018-2022, The Monero Project
-+
-+// 
-+// All rights reserved.
-+// 
-+// Redistribution and use in source and binary forms, with or without modification, are
-+// permitted provided that the following conditions are met:
-+// 
-+// 1. Redistributions of source code must retain the above copyright notice, this list of
-+//    conditions and the following disclaimer.
-+// 
-+// 2. Redistributions in binary form must reproduce the above copyright notice, this list
-+//    of conditions and the following disclaimer in the documentation and/or other
-+//    materials provided with the distribution.
-+// 
-+// 3. Neither the name of the copyright holder nor the names of its contributors may be
-+//    used to endorse or promote products derived from this software without specific
-+//    prior written permission.
-+// 
-+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-+// THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-+// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
-+// THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+//#include "pch_ut.h"
-+#include "decoy_wrappers.h"
-+#include "cryptonote_config.h"
-+#include "gtest/gtest.h"
-+
-+#include <iostream>
-+#include <iomanip>
-+#include <fstream>
-+#include <cmath>
-+
-+namespace {
-+    
-+double Rand(double min, double max)
-+{
-+    const double val = rand() / static_cast<double>(RAND_MAX) * (max-min) + min;
-+    return val;
-+}
-+
-+void run_draws(int var, int numDraws, const std::string & fileNameOut = "")
-+{
-+    wallet2_wrapper wallet2;
-+    const int seed = 1;
-+    srand (seed);
-+    for (int i = 0; i < numDraws; ++i)
-+    {
-+        const int random_size = Rand(1, 200);
-+        std::vector<uint8_t> extras;
-+        for (int x = 0; x < random_size; ++x)
-+        {
-+            extras.push_back(std::ceil(x));
-+        }
-+        const uint64_t fee = wallet2.create_transactions_2_dummy(extras);
-+        if (i % 500 == 0)
-+        {
-+            std::cout << "At " << int(i / double(numDraws) * 100) << "% val = \t" << fee << std::endl;
-+        }
-+        
-+    }
-+    
-+}
-+
-+}
-+
-+TEST(fee_fingerp, gamma_initial)
-+{
-+    const int NUM_DRAWS = 10000;
-+    const char * fileNameOut = "/tmp/mrl_test";
-+    const double mul = 1;
-+    run_draws(mul, NUM_DRAWS, fileNameOut);
-+}
-+
-+
-+
