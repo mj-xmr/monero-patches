@@ -27,6 +27,9 @@ for VERSION in $ALL_VERS; do
 		pushd $VERSION
 			#git checkout $(git branch -a | grep $VERSION | tail -1) # Automates latest release detection
 			git checkout $VERSION
+			pushd external
+				git submodule add https://github.com/mj-xmr/EnjoLib-mj
+			popd
 		popd
 		rm $VERSION/.git -fr # not useful for this test and takes a lot of space
 		echo "Compressing the $VERSION branch..."
