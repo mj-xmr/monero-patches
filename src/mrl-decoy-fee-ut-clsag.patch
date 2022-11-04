@@ -1,8 +1,8 @@
 diff --git a/.gitmodules b/.gitmodules
-index 3cf831bcd..d12fea2f3 100644
+index 9dacf534f..32b7160e4 100644
 --- a/.gitmodules
 +++ b/.gitmodules
-@@ -8,6 +8,10 @@
+@@ -9,6 +9,10 @@
  [submodule "external/rapidjson"]
  	path = external/rapidjson
  	url = https://github.com/Tencent/rapidjson
@@ -14,10 +14,10 @@ index 3cf831bcd..d12fea2f3 100644
  	path = external/trezor-common
  	url = https://github.com/trezor/trezor-common.git
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index ffb5abb82..1ad02e2e6 100644
+index 2a16e0081..c2d1e2ed1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -546,6 +546,12 @@ ExternalProject_Add(generate_translations_header
+@@ -472,6 +472,12 @@ ExternalProject_Add(generate_translations_header
    INSTALL_COMMAND cmake -E echo "")
  include_directories("${CMAKE_CURRENT_BINARY_DIR}/translations")
  add_subdirectory(external)
@@ -31,7 +31,7 @@ index ffb5abb82..1ad02e2e6 100644
  # Final setup for libunbound
  include_directories(${UNBOUND_INCLUDE})
 diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index 7ae4ba750..8c2cdbb17 100644
+index a8916a7d0..7062cb653 100644
 --- a/external/CMakeLists.txt
 +++ b/external/CMakeLists.txt
 @@ -35,6 +35,8 @@
@@ -43,18 +43,11 @@ index 7ae4ba750..8c2cdbb17 100644
  find_package(Miniupnpc REQUIRED)
  
  message(STATUS "Using in-tree miniupnpc")
-diff --git a/external/EnjoLib-mj b/external/EnjoLib-mj
-new file mode 160000
-index 000000000..f87243268
---- /dev/null
-+++ b/external/EnjoLib-mj
-@@ -0,0 +1 @@
-+Subproject commit f87243268b48991dfb4af6e83415adad4e81b562
 diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
-index cc148dd49..9650193d1 100644
+index 063c493ce..3ca281608 100644
 --- a/src/wallet/wallet2.cpp
 +++ b/src/wallet/wallet2.cpp
-@@ -13988,3 +13988,70 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
+@@ -14171,3 +14171,70 @@ std::pair<size_t, uint64_t> wallet2::estimate_tx_size_and_weight(bool use_rct, i
  }
  //----------------------------------------------------------------------------------------------------
  }
@@ -126,7 +119,7 @@ index cc148dd49..9650193d1 100644
 +}
 +
 diff --git a/src/wallet/wallet2.h b/src/wallet/wallet2.h
-index 8d54ec20d..734c40698 100644
+index eac99185c..c91d4c12a 100644
 --- a/src/wallet/wallet2.h
 +++ b/src/wallet/wallet2.h
 @@ -110,7 +110,7 @@ namespace tools
@@ -138,7 +131,7 @@ index 8d54ec20d..734c40698 100644
      std::gamma_distribution<double> gamma;
      const std::vector<uint64_t> &rct_offsets;
      const uint64_t *begin, *end;
-@@ -2319,3 +2319,12 @@ namespace tools
+@@ -2351,3 +2351,12 @@ namespace tools
    }
    //----------------------------------------------------------------------------------------------------
  }
@@ -708,10 +701,10 @@ index 000000000..2875bd729
 \ No newline at end of file
 diff --git a/tests/unit_tests/fee_fingerprinting.cpp b/tests/unit_tests/fee_fingerprinting.cpp
 new file mode 100644
-index 000000000..38e07063b
+index 000000000..9ae4e7103
 --- /dev/null
 +++ b/tests/unit_tests/fee_fingerprinting.cpp
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,122 @@
 +// Copyright (c) 2018-2022, The Monero Project
 +
 +// 
@@ -743,6 +736,7 @@ index 000000000..38e07063b
 +//#include "pch_ut.h"
 +#include "decoy_wrappers.h"
 +#include "cryptonote_config.h"
++#include "version.h"
 +
 +#include <Util/VecD.hpp>
 +#include <Util/Str.hpp>
@@ -765,6 +759,11 @@ index 000000000..38e07063b
 +    return val;
 +}
 +
++void print_line()
++{
++    std::cout << "--------------------------------------\n";
++}
++
 +EnjoLib::Str PlotObs(const EnjoLib::VecD & obs, const EnjoLib::VecD & obsRef, int blocks = 30)
 +{
 +    return EnjoLib::AsciiPlot::Build()
@@ -782,6 +781,7 @@ index 000000000..38e07063b
 +    const int seed = 0;
 +    srand (seed);
 +    std::cout << "Progress\tOld\tNew\tChange\n";
++    print_line();
 +    for (int i = 0; i < numDraws; ++i)
 +    {
 +        //const int random_size = Rand(1, 200);
@@ -801,11 +801,12 @@ index 000000000..38e07063b
 +        changes.Add(relChange);
 +        if (i % 500 == 0)
 +        {
-+            std::cout << "At " << int(i / double(numDraws) * 100) << "% val = \t" << fee_old << "\t" << fee_new << 
++            std::cout << "At " << int(i / double(numDraws) * 100) << "%\t\t" << fee_old << "\t" << fee_new << 
 +            "\t" << gmat.round(relChange * 100) << "%" << std::endl;
 +        }
 +    }
 +    const EnjoLib::Distrib dstr;
++    print_line();
 +    //std::cout << dstr.PlotLine(dstr.GetDistrib(obs), false) << std::endl;
 +    std::cout << "Old: " << PlotObs(obsOld, obsAll) << std::endl;
 +    std::cout << "New: " << PlotObs(obsNew, obsAll) << std::endl;
@@ -816,7 +817,8 @@ index 000000000..38e07063b
 +
 +TEST(fee_fingerp, compare_preCLSAG_CLSAG)
 +{
-+    const int NUM_DRAWS = 10000;
++    std::cout << "Version: " << MONERO_VERSION << "\n\n";
++    const int NUM_DRAWS = 6000;
 +    const char * fileNameOut = "/tmp/mrl_test";
 +    const double mul = 1;
 +    run_draws(mul, NUM_DRAWS, true,  fileNameOut);
