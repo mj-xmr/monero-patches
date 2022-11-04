@@ -43,6 +43,13 @@ index 7ae4ba750..8c2cdbb17 100644
  find_package(Miniupnpc REQUIRED)
  
  message(STATUS "Using in-tree miniupnpc")
+diff --git a/external/EnjoLib-mj b/external/EnjoLib-mj
+new file mode 160000
+index 000000000..f87243268
+--- /dev/null
++++ b/external/EnjoLib-mj
+@@ -0,0 +1 @@
++Subproject commit f87243268b48991dfb4af6e83415adad4e81b562
 diff --git a/src/wallet/wallet2.cpp b/src/wallet/wallet2.cpp
 index cc148dd49..9650193d1 100644
 --- a/src/wallet/wallet2.cpp
